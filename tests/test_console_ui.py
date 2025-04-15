@@ -20,5 +20,16 @@ class TestConsoleUI(unittest.TestCase):
         self.ui.clear_screen()
         mock_print.assert_called_with("\n" * 100)
 
+    @patch('builtins.input', side_effect=['fire', '5', 'high', 'ambulance,police'])
+    def test_report_incident(self, mock_input):
+        """Test complete incident reporting."""
+        result = self.ui.report_incident()
+        self.assertEqual(result, {
+            'type': 'fire',
+            'location': 'Zone 5',
+            'priority': 'high',
+            'resources': ['ambulance', 'police']
+        })
+
 if __name__ == "__main__":
     unittest.main()
