@@ -1,0 +1,39 @@
+# tests/test_incident.py
+import unittest
+from models.incident import Incident
+
+class TestIncident(unittest.TestCase):
+    """
+    Test cases for the Incident class functionality.
+    Tests include attribute initialisation and method behaviour.
+    """
+    
+    def setUp(self):
+        """Create a test incident before each test case."""
+        self.test_incident = Incident(
+            incident_type="fire",
+            location="Zone 1",
+            priority="high",
+            required_resources=["fire_engine", "ambulance"]
+        )
+    
+    def test_initial_attributes(self):
+        """Verify attributes are correctly initialised."""
+        self.assertEqual(self.test_incident.type, "fire")
+        self.assertEqual(self.test_incident.location, "Zone 1")
+        self.assertEqual(self.test_incident.priority, "high")
+        self.assertEqual(self.test_incident.required_resources, ["fire_engine", "ambulance"])
+        self.assertEqual(self.test_incident.status, "unassigned")
+    
+    def test_priority_update(self):
+        """Test priority can be updated."""
+        self.test_incident.update_priority("medium")
+        self.assertEqual(self.test_incident.priority, "medium")
+    
+    def test_status_update(self):
+        """Test status can be updated."""
+        self.test_incident.set_status("assigned")
+        self.assertEqual(self.test_incident.status, "assigned")
+
+if __name__ == "__main__":
+    unittest.main()
