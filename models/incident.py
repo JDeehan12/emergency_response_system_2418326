@@ -1,9 +1,12 @@
+import uuid # Adds automatic UUIDs generation for incidents
+
 # models/incident.py
 class Incident:
     """
     Represents an emergency incident with type, location, priority, and required resources.
     
     Attributes:
+        id (str): Unique identifier for the incident
         type (str): The type of emergency (e.g., "fire", "accident").
         location (str): The zone where the incident occurred (e.g., "Zone 1").
         priority (str): Severity level ("high", "medium", "low").
@@ -11,6 +14,7 @@ class Incident:
         status (str): Current assignment state (defaults to "unassigned").
     """
     def __init__(self, incident_type: str, location: str, priority: str, required_resources: list):
+        self.id = str(uuid.uuid4())  # Generate unique ID
         self.type = incident_type
         self.location = location
         self.priority = priority
