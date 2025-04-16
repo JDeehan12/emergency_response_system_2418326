@@ -68,5 +68,29 @@ class TestConsoleUI(unittest.TestCase):
         expected_line = "ambulance      Zone 1         Assigned to incident"
         self.assertIn(expected_line, printed_lines)
 
+    def test_duplicate_resource_prevention(self):
+        """Verify system prevents adding duplicate resources."""
+        controller = MainController()
+        
+        # Mock user input for first resource
+        with patch('views.console_ui.ConsoleUI.get_resource_input', 
+                return_value={'type': 'ambulance', 'location': 'Zone 1'}):
+            controller._handle_add_resource()
+        
+        # Attempt to add duplicate
+        with patch('views.console_ui.ConsoleUI.get_resource_input',
+                return_value={'type': 'ambulance', 'location': 'Zone 1'}):
+            with patch('builtins.print') as mock_print:
+                controller._handle_add_resource()
+                
+                # Verify error message
+                error_msg = next(call_args[0][0] 
+                            for call_args in mock_print.call_args_list
+                            if '[ERROR]' in call_args[0][0])
+                self.assertIn("already exists", error_msg)
+        
+        # Verify only one resource was added
+        self.assertEqual(len(controller.dispatcher.resources), 1)
+
 if __name__ == "__main__":
     unittest.main()

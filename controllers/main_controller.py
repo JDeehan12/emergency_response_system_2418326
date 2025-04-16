@@ -47,11 +47,20 @@ class MainController:
         self.dispatcher.add_incident(incident)
         print(f"Incident {incident.id[:8]} reported successfully.")
 
-    def _handle_add_resource(self) -> None:
-        """Handles resource addition workflow."""
-        print("\n=== Add New Resource ===")
-        resource_type = input("Resource type: ")
-        location = input("Location (Zone): ")
-        resource = Resource(resource_type, location)
-        self.dispatcher.add_resource(resource)
-        print(f"{resource_type} at {location} added to available resources.")
+    def _handle_add_resource(self):
+        """Handles complete resource addition workflow with duplicate checking."""
+        try:
+            data = self.ui.get_resource_input()
+            
+            # Check for existing identical resource
+            if any(r.resource_type == data['type'] and 
+                r.location == data['location']
+                for r in self.dispatcher.resources):
+                raise ValueError(f"Resource {data['type']} already exists at {data['location']}")
+                
+            resource = Resource(data['type'], data['location'])
+            self.dispatcher.add_resource(resource)
+            print(f"[SUCCESS] Added {data['type']} at {data['location']}")
+            
+        except ValueError as e:
+            print(f"[ERROR] {str(e)}")
