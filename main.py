@@ -1,24 +1,21 @@
-# main.py
-from models.incident import Incident
-from views.console_ui import ConsoleUI
+"""
+Main entry point for Emergency Response System application.
+"""
+
+from controllers.main_controller import MainController
 
 def main():
     """
-    Entry point for the Emergency Response System application.
-    Initialises a test incident and launches the console interface.
+    Application entry point.
+    Initializes and runs the main controller.
     """
-    # Test Incident creation (example usage)
-    test_incident = Incident(
-        incident_type="fire", 
-        location="Zone 1", 
-        priority="high", 
-        required_resources=["fire_engine"]
-    )
-    print(f"Test incident created: {test_incident.type}")
-
-    # Launch console interface
-    console = ConsoleUI()
-    console.display_menu()
+    try:
+        controller = MainController()
+        controller.run()
+    except KeyboardInterrupt:
+        print("\nApplication terminated by user.")
+    except Exception as e:
+        print(f"Critical error: {str(e)}")
 
 if __name__ == "__main__":
     main()
