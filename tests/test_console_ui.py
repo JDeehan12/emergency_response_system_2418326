@@ -7,12 +7,14 @@ from views.console_ui import ConsoleUI
 from models.incident import Incident
 from models.resource import Resource
 from controllers.main_controller import MainController
+from controllers.dispatcher import Dispatcher
 
 class TestConsoleUI(unittest.TestCase):
     """Tests console user interface components."""
     
     def setUp(self):
         self.ui = ConsoleUI()
+        self.dispatcher = Dispatcher()
     
     @patch('builtins.input', return_value='3')
     def test_display_menu_returns_choice(self, mock_input):
@@ -97,6 +99,28 @@ class TestConsoleUI(unittest.TestCase):
         
         # Verify only one resource was added
         self.assertEqual(len(controller.dispatcher.resources), 1)
+    
+    def test_menu_with_allocation_option(self):
+        """Test menu shows allocation option."""
+        with patch('builtins.print') as mock_print:
+            self.ui.display_menu()
+            output = "\n".join(call[0][0] for call in mock_print.call_args_list)
+            self.assertIn("5. Allocate Resources", output)
+
+    def test_manual_allocation(self):
+        """Test manual allocation triggering."""
+        # Add a test resource first
+        test_resource = Resource("fire_engine", "Zone 1")
+        self.dispatcher.add_resource(test_resource)
+        
+        # Add and test incident
+        test_incident = Incident("fire", "Zone 1", "high", ["fire_engine"])
+        self.dispatcher.add_incident(test_incident)
+        
+        result = self.dispatcher.allocate_resources()
+        self.assertIn('assigned', result)
+        self.assertIn('unassigned', result)
+        self.assertEqual(len(result['assigned']), 1)
 
 if __name__ == "__main__":
     unittest.main()

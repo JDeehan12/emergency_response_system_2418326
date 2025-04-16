@@ -23,13 +23,20 @@ class ConsoleUI:
         Returns:
             str: User's menu selection (1-5)
         """
-        print("\nEmergency Response System")
+        print("\n=== Emergency Response System ===")
         print("1. Report New Incident")
         print("2. Add New Resource")
         print("3. View Active Incidents")
         print("4. View Available Resources")
-        print("5. Exit")
-        return input("Enter your choice (1-5): ").strip()
+        print("5. Allocate Resources")  # New option
+        print("6. Exit")
+        return input("Enter your choice (1-6): ").strip()
+    
+    def _display_options(self, title: str, options: list) -> None:
+        """Displays numbered options with title."""
+        print(f"\n=== {title} ===")
+        for i, option in enumerate(options, 1):
+            print(f"{i}. {option}")
 
     def clear_screen(self) -> None:
         """Clears console screen using simple newline approach."""

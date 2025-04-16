@@ -29,7 +29,12 @@ class MainController:
                 self.ui.display_incidents(self.dispatcher.incidents)
             elif choice == '4':  # View resources
                 self.ui.display_resources(self.dispatcher.resources)
-            elif choice == '5':  # Exit
+            elif choice == '5':  # Allocate resources
+                result = self.dispatcher.allocate_resources()
+                print(f"\nAllocation completed:")
+                print(f"- Assigned: {len(result['assigned'])} incidents")
+                print(f"- Unassigned: {len(result['unassigned'])} incidents")
+            elif choice == '6':  # Exit
                 print("Exiting system...")
                 break
             else:

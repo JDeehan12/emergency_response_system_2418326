@@ -27,24 +27,38 @@ class Dispatcher:
         """Adds a new resource to the available pool."""
         self.resources.append(resource)
 
+    def allocate_resources(self) -> dict:
+        """
+        Manually triggers resource allocation and returns allocation report.
+        
+        Returns:
+            dict: Allocation results with keys:
+                - assigned: List of assigned incident IDs
+                - unassigned: List of unassigned incident IDs
+        """
+        self._allocate_resources()  # This calls the existing allocation logic
+        
+        return {
+            'assigned': [i.id for i in self.incidents if i.status == 'assigned'],
+            'unassigned': [i.id for i in self.incidents if i.status == 'unassigned']
+        }
+    
     def _allocate_resources(self) -> None:
         """
-        Core allocation logic with priority handling and reallocation.
-        Processes incidents in priority order (high > medium > low).
+        Iterates over unassigned incidents and tries to assign required resources.
         """
-        # Process by priority
-        for priority in ['high', 'medium', 'low']:
-            unassigned = [i for i in self.incidents 
-                        if i.priority == priority 
-                        and i.status == 'unassigned']
-            
-            for incident in unassigned:
-                if self._assign_resources_to_incident(incident):
-                    incident.status = "assigned"
-                elif priority == 'high':
-                    if self._reallocate_for_high_priority(incident):
-                        incident.status = "assigned"
-
+        for incident in self.incidents:
+            if incident.status != 'assigned':
+                success = self._assign_resources_to_incident(incident)
+                if success:
+                    incident.status = 'assigned'
+                else:
+                    # Try reallocation if incident has high priority
+                    if incident.priority == 'high':
+                        reallocated = self._reallocate_for_high_priority(incident)
+                        if reallocated:
+                            incident.status = 'assigned'
+        
     def _assign_resources_to_incident(self, incident: Incident) -> bool:
         """
         Attempts to assign all required resources to an incident.
