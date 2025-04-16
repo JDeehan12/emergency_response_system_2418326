@@ -17,6 +17,13 @@ class TestResourceSystem(unittest.TestCase):
         with self.assertRaises(ValueError):
             Resource("invalid_type", "Zone 1")
 
+    def test_resource_type_definitions(self):
+        """Verify all resource types have required fields."""
+        for rtype in RESOURCE_TYPES.values():
+            self.assertIn("id", rtype)
+            self.assertIn("name", rtype)
+            self.assertIn("aliases", rtype)
+
 class TestConsoleUIResourceInput(unittest.TestCase):
     
     def setUp(self):

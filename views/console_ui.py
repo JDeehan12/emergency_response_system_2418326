@@ -3,6 +3,7 @@ Provides console-based user interface for emergency response system.
 Handles all user interactions and input validation.
 """
 
+from typing import Optional
 from models.resource import RESOURCE_TYPES
 
 class ConsoleUI:
