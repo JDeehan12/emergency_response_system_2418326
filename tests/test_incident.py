@@ -34,6 +34,14 @@ class TestIncident(unittest.TestCase):
         """Test status can be updated."""
         self.test_incident.set_status("assigned")
         self.assertEqual(self.test_incident.status, "assigned")
+    
+    def test_incident_id_generation(self):
+        """Test sequential ID generation."""
+        i1 = Incident("fire", "Zone 1", "high", [])
+        i2 = Incident("medical", "Zone 2", "medium", [])
+        self.assertTrue(i1.id.startswith("INC-"))
+        self.assertTrue(i2.id.startswith("INC-"))
+        self.assertNotEqual(i1.id, i2.id)
 
 if __name__ == "__main__":
     unittest.main()

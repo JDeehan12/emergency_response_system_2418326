@@ -13,8 +13,11 @@ class Incident:
         required_resources (list): Resources needed (e.g., ["ambulance", "police"]).
         status (str): Current assignment state (defaults to "unassigned").
     """
+    _id_counter = 0  # Class variable for sequential IDs
+
     def __init__(self, incident_type: str, location: str, priority: str, required_resources: list):
-        self.id = str(uuid.uuid4())  # Generate unique ID
+        Incident._id_counter += 1
+        self.id = f"INC-{Incident._id_counter:04d}"  # Format as INC-0001
         self.type = incident_type
         self.location = location
         self.priority = priority
