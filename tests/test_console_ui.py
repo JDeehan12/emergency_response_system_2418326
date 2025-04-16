@@ -6,6 +6,7 @@ from unittest.mock import patch
 from views.console_ui import ConsoleUI
 from models.incident import Incident
 from models.resource import Resource
+from controllers.main_controller import MainController
 
 class TestConsoleUI(unittest.TestCase):
     """Tests console user interface components."""
@@ -70,24 +71,29 @@ class TestConsoleUI(unittest.TestCase):
 
     def test_duplicate_resource_prevention(self):
         """Verify system prevents adding duplicate resources."""
+        # Initialize with empty dispatcher
         controller = MainController()
+        controller.dispatcher.resources = []  # Ensure clean state
         
-        # Mock user input for first resource
+        # Mock resource input
+        test_resource = {'type': 'ambulance', 'location': 'Zone 1'}
+        
+        # First addition (should succeed)
         with patch('views.console_ui.ConsoleUI.get_resource_input', 
-                return_value={'type': 'ambulance', 'location': 'Zone 1'}):
-            controller._handle_add_resource()
-        
-        # Attempt to add duplicate
-        with patch('views.console_ui.ConsoleUI.get_resource_input',
-                return_value={'type': 'ambulance', 'location': 'Zone 1'}):
+                return_value=test_resource):
             with patch('builtins.print') as mock_print:
                 controller._handle_add_resource()
-                
-                # Verify error message
-                error_msg = next(call_args[0][0] 
-                            for call_args in mock_print.call_args_list
-                            if '[ERROR]' in call_args[0][0])
-                self.assertIn("already exists", error_msg)
+                success_msgs = [args[0] for args, _ in mock_print.call_args_list]
+                self.assertTrue(any("[SUCCESS]" in msg for msg in success_msgs))
+        
+        # Attempt duplicate (should fail)
+        with patch('views.console_ui.ConsoleUI.get_resource_input',
+                return_value=test_resource):
+            with patch('builtins.print') as mock_print:
+                controller._handle_add_resource()
+                error_msgs = [args[0] for args, _ in mock_print.call_args_list]
+                self.assertTrue(any("[ERROR]" in msg for msg in error_msgs))
+                self.assertTrue(any("already exists" in msg for msg in error_msgs))
         
         # Verify only one resource was added
         self.assertEqual(len(controller.dispatcher.resources), 1)
