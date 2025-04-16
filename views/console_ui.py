@@ -43,29 +43,45 @@ class ConsoleUI:
         print("\n" * 100)  # Cross-platform clear method
 
     def report_incident(self) -> dict:
-        """
-        Guides user through incident reporting with full validation.
-        
-        Returns:
-            dict: Contains validated incident data with keys:
-                - type (str): Incident category
-                - location (str): Zone identifier
-                - priority (str): Severity level
-                - resources (list[str]): Required resources
-        """
+        """Guides user through incident reporting."""
         print("\n=== Report New Incident ===")
         return {
-            'type': self._get_valid_input(
-                "Incident type", 
-                self.valid_incident_types
-            ),
+            'type': self._select_from_options("Incident Type", self.valid_incident_types),
             'location': self._get_zone_input(),
-            'priority': self._get_valid_input(
-                "Priority level", 
-                self.valid_priorities
-            ),
-            'resources': self._get_resources_input()
+            'priority': self._select_from_options("Priority Level", self.valid_priorities),
+            'resources': self._select_resources()
         }
+
+    def _select_from_options(self, title: str, options: list) -> str:
+        """Gets user selection from numbered options."""
+        self._display_options(title, options)
+        while True:
+            choice = input(f"Select {title.lower()} (1-{len(options)}): ").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(options):
+                return options[int(choice)-1]
+            print(f"Invalid selection. Please enter 1-{len(options)}")
+
+    def _select_resources(self) -> list:
+        """Gets resource selection from menu."""
+        selected = []
+        while True:
+            print("\n=== Required Resources ===")
+            print("Current selection:", ", ".join(selected) if selected else "None")
+            print("0. Done selecting")
+            self._display_resource_menu()
+            
+            choice = input("Add resource (0-3): ").strip()
+            if choice == '0':
+                if not selected:
+                    print("Error: At least one resource required")
+                    continue
+                return selected
+            elif choice.isdigit() and 1 <= int(choice) <= len(RESOURCE_TYPES):
+                resource = RESOURCE_TYPES[int(choice)]["id"]
+                if resource not in selected:
+                    selected.append(resource)
+            else:
+                print("Invalid selection. Please try again.")
 
     def _get_valid_input(self, prompt: str, options: list[str]) -> str:
         """

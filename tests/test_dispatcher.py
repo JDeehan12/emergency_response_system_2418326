@@ -80,5 +80,20 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(ambulance.assigned_incident, high.id)
         self.assertEqual(low.status, "unassigned")
     
+    def test_manual_allocation(self):
+        """Test manual allocation triggering."""
+        # Add a test resource first
+        test_resource = Resource("fire_engine", "Zone 1")
+        self.dispatcher.add_resource(test_resource)
+        
+        # Add and test incident
+        test_incident = Incident("fire", "Zone 1", "high", ["fire_engine"])
+        self.dispatcher.add_incident(test_incident)
+        
+        result = self.dispatcher.allocate_resources()
+        self.assertIn('assigned', result)
+        self.assertIn('unassigned', result)
+        self.assertEqual(len(result['assigned']), 1)
+
 if __name__ == "__main__":
     unittest.main()
