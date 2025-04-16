@@ -76,10 +76,12 @@ class ConsoleUI:
                     print("Error: At least one resource required")
                     continue
                 return selected
-            elif choice.isdigit() and 1 <= int(choice) <= len(RESOURCE_TYPES):
+            elif choice.isdigit() and int(choice) in RESOURCE_TYPES:
                 resource = RESOURCE_TYPES[int(choice)]["id"]
                 if resource not in selected:
                     selected.append(resource)
+                else:
+                    print(f"{resource} already selected.")
             else:
                 print("Invalid selection. Please try again.")
 
