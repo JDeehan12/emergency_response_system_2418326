@@ -4,6 +4,7 @@ Handles all user interactions and input validation.
 """
 
 from typing import Optional
+from controllers.dispatcher import Dispatcher
 from models.resource import RESOURCE_TYPES
 
 class ConsoleUI:
@@ -130,19 +131,17 @@ class ConsoleUI:
                 return resources
             print("Error: Must specify at least one resource.")
 
-    def display_incidents(self, incidents: list) -> None:
-        """
-        Displays formatted table of active incidents.
-        """
-        header = "\n=== Active Incidents ==="
-        col_header = f"{'ID':<10}{'Type':<15}{'Location':<15}{'Priority':<10}{'Status':<15}"
-        separator = "-" * 65
-        print(header)
-        print(col_header)
-        print(separator)
+    def display_incidents(self, incidents: list, dispatcher: Dispatcher) -> None:
+        """Displays incidents with assignment info."""
+        print("\n=== Active Incidents ===")
+        print(f"{'ID':<8}{'Type':<12}{'Location':<10}{'Priority':<10}{'Status':<12}{'Assigned Resources':<20}")
+        print("-" * 72)
         for incident in incidents:
-            print(f"{incident.id[:8]:<10}{incident.type:<15}{incident.location:<15}"
-                f"{incident.priority:<10}{incident.status:<15}")
+            resources = [r.resource_type for r in dispatcher.resources 
+                        if r.assigned_incident == incident.id]
+            res_str = ", ".join(resources) if resources else "None"
+            print(f"{incident.id:<8}{incident.type:<12}{incident.location:<10}"
+                f"{incident.priority:<10}{incident.status:<12}{res_str:<20}")
 
     def display_resources(self, resources: list) -> None:
         """

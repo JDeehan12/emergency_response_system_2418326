@@ -15,6 +15,8 @@ class TestConsoleUI(unittest.TestCase):
     def setUp(self):
         self.ui = ConsoleUI()
         self.dispatcher = Dispatcher()
+        self.test_incident = Incident("fire", "Zone 1", "high", ["ambulance"])
+        self.test_resource = Resource("ambulance", "Zone 1")
     
     @patch('builtins.input', return_value='3')
     def test_display_menu_returns_choice(self, mock_input):
@@ -46,13 +48,15 @@ class TestConsoleUI(unittest.TestCase):
         test_incident.id = "test1234"
         test_incident.status = "unassigned"
         
-        self.ui.display_incidents([test_incident])
+        # Create a dispatcher and pass it to the method
+        dispatcher = Dispatcher()
+        self.ui.display_incidents([test_incident], dispatcher)
         
         # Get all printed lines
         printed_lines = [call[0][0] for call in mock_print.call_args_list]
         
         # Verify the data line exists in output
-        expected_line = "test1234  fire           Zone 1         high      unassigned     "
+        expected_line = "test1234fire        Zone 1    high      unassigned  None                "
         self.assertIn(expected_line, printed_lines)
 
     @patch('builtins.print')
@@ -114,6 +118,26 @@ class TestConsoleUI(unittest.TestCase):
         self.assertEqual(result['type'], 'fire')
         self.assertEqual(result['priority'], 'medium')
         self.assertEqual(result['resources'], ['ambulance'])
+
+    def test_incident_display_with_assignments(self):
+        """Test incident display shows assigned resources."""
+        # Create test incident
+        test_incident = Incident("fire", "Zone 1", "high", ["fire_engine"])
+        test_incident.status = "assigned"
+        
+        # Create test resource and assign it
+        test_resource = Resource("fire_engine", "Zone 1")
+        test_resource.assign_to_incident(test_incident.id)
+        
+        # Create dispatcher and add both
+        dispatcher = Dispatcher()
+        dispatcher.incidents.append(test_incident)
+        dispatcher.resources.append(test_resource)
+        
+        with patch('builtins.print') as mock_print:
+            self.ui.display_incidents([test_incident], dispatcher)
+            output = "\n".join(call[0][0] for call in mock_print.call_args_list)
+            self.assertIn("fire_engine", output)
 
 if __name__ == "__main__":
     unittest.main()
