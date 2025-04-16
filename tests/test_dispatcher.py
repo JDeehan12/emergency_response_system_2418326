@@ -14,18 +14,29 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.add_resource(self.fire_engine)
 
     def test_priority_allocation(self):
-        """High-priority incidents get resources first when scarce."""
-        high_pri = Incident("fire", "Zone 1", "high", ["ambulance"])
-        low_pri = Incident("accident", "Zone 1", "low", ["ambulance"])
+        """Verify high-priority incidents get resources first."""
+        # Add two ambulances to test contention
+        amb1 = Resource("ambulance", "Zone 1")
+        amb2 = Resource("ambulance", "Zone 1")
+        self.dispatcher.add_resource(amb1)
+        self.dispatcher.add_resource(amb2)
         
-        # Add low priority first
-        self.dispatcher.add_incident(low_pri)
-        self.dispatcher.add_incident(high_pri)
+        # Create incidents
+        low1 = Incident("accident", "Zone 1", "low", ["ambulance"])
+        low2 = Incident("fall", "Zone 1", "low", ["ambulance"]) 
+        high = Incident("heart attack", "Zone 1", "high", ["ambulance"])
         
-        # Verify high-priority got the resource
-        self.assertEqual(high_pri.status, "assigned")
-        self.assertEqual(low_pri.status, "unassigned")
-        self.assertEqual(self.ambulance.assigned_incident, high_pri.id)
+        # Add incidents (high priority last)
+        self.dispatcher.add_incident(low1)
+        self.dispatcher.add_incident(low2)
+        self.dispatcher.add_incident(high)
+        
+        # Verify high priority got resource
+        self.assertEqual(high.status, "assigned")
+        
+        # Verify one low priority was unassigned
+        unassigned_lows = [i for i in [low1, low2] if i.status == "unassigned"]
+        self.assertEqual(len(unassigned_lows), 1)
 
     def test_proximity_matching(self):
         """Resources are allocated from same zone when possible."""
@@ -45,15 +56,29 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(fire.status, "assigned")
 
     def test_reallocation(self):
-        """Resources are taken from low-priority for high-priority."""
-        low_pri = Incident("accident", "Zone 1", "low", ["ambulance"])
-        self.dispatcher.add_incident(low_pri)
+        """Verify resources get reallocated to high priority."""
+        # Setup - add an additional ambulance
+        extra_ambulance = Resource("ambulance", "Zone 1")
+        self.dispatcher.add_resource(extra_ambulance)
         
-        high_pri = Incident("fire", "Zone 1", "high", ["ambulance"])
-        self.dispatcher.add_incident(high_pri)
+        # Create and add low priority incident
+        low = Incident("accident", "Zone 1", "low", ["ambulance"])
+        self.dispatcher.add_incident(low)
         
-        self.assertEqual(high_pri.status, "assigned")
-        self.assertEqual(low_pri.status, "unassigned")
+        # Verify initial assignment
+        self.assertEqual(low.status, "assigned")
+        self.assertEqual(extra_ambulance.assigned_incident, low.id)
+        
+        # Trigger high priority incident
+        high = Incident("heart attack", "Zone 1", "high", ["ambulance"])
+        self.dispatcher.add_incident(high)
+        
+        # Verify reallocation
+        self.assertEqual(high.status, "assigned")
+        self.assertEqual(extra_ambulance.assigned_incident, high.id)
+        
+        # Low priority should now be unassigned
+        self.assertEqual(low.status, "unassigned")
 
 if __name__ == "__main__":
     unittest.main()
