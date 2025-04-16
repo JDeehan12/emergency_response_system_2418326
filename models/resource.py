@@ -53,6 +53,13 @@ class Resource:
         else:
             raise ValueError("Resource already allocated to another incident")
 
+    def release(self) -> None:
+        """
+        Releases the resource from its current assignment and marks it as available.
+        """
+        self.assigned_incident = None
+        self.is_available = True
+
     def __str__(self) -> str:
         """
         String representation for debugging/logging.

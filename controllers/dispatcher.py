@@ -35,14 +35,15 @@ class Dispatcher:
         # Process by priority
         for priority in ['high', 'medium', 'low']:
             unassigned = [i for i in self.incidents 
-                         if i.priority == priority 
-                         and i.status == 'unassigned']
+                        if i.priority == priority 
+                        and i.status == 'unassigned']
             
             for incident in unassigned:
                 if self._assign_resources_to_incident(incident):
                     incident.status = "assigned"
                 elif priority == 'high':
-                    self._reallocate_for_high_priority(incident)
+                    if self._reallocate_for_high_priority(incident):
+                        incident.status = "assigned"
 
     def _assign_resources_to_incident(self, incident: Incident) -> bool:
         """
@@ -86,28 +87,24 @@ class Dispatcher:
             key=lambda x: self._location_distance(x.location, location)
         )
 
-    def _reallocate_for_high_priority(self, incident: Incident) -> None:
+    def _reallocate_for_high_priority(self, incident: Incident) -> bool:
         """
-        Reallocates resources from lower priority incidents to a high priority incident.
+        Reallocates resources from lower priority incidents.
+        Returns True if reallocation was successful, False otherwise.
         """
         for resource_type in incident.required_resources:
-            # Find a reallocatable resource
             donor_resource = self._find_reallocatable_resource(resource_type)
             if donor_resource:
-                # Get the incident currently using this resource
+                # Release from current incident
                 current_incident = self._get_incident_by_id(donor_resource.assigned_incident)
-                
-                # Release the resource
                 donor_resource.release()
                 current_incident.status = "unassigned"
                 
-                # Reassign to high priority incident
+                # Assign to high priority incident
                 donor_resource.assign_to_incident(incident.id)
                 self.allocation_log[incident.id] = donor_resource.resource_type
-                
-                # Re-process the unassigned incident
-                self._allocate_resources()
-                break  # Only reallocate one resource at a time
+                return True
+        return False
 
     def _find_reallocatable_resource(self, resource_type: str) -> Optional[Resource]:
         """
