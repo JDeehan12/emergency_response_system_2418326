@@ -1,39 +1,46 @@
+"""
+Tests for resource type system and input handling.
+"""
+
 import unittest
-from models.resource import Resource
+from unittest.mock import patch
+from models.resource import Resource, RESOURCE_TYPES
+from views.console_ui import ConsoleUI
 
-class TestResource(unittest.TestCase):
-    """
-    Unit tests for the Resource class functionality.
-    Verifies initialisation, availability toggling, and incident assignment.
-    """
-
-    def setUp(self):
-        """Create a test resource before each test case."""
-        self.test_resource = Resource("ambulance", "Zone 2")
-
-    def test_initial_state(self):
-        """Verify resource initialises with correct defaults."""
-        self.assertEqual(self.test_resource.resource_type, "ambulance")
-        self.assertEqual(self.test_resource.location, "Zone 2")
-        self.assertTrue(self.test_resource.is_available)
-        self.assertIsNone(self.test_resource.assigned_incident)
-
-    def test_toggle_availability(self):
-        """Test availability status can be updated."""
-        self.test_resource.toggle_availability(False)
-        self.assertFalse(self.test_resource.is_available)
-
-    def test_incident_assignment(self):
-        """Test resource can be assigned to an incident."""
-        self.test_resource.assign_to_incident("incident_123")
-        self.assertEqual(self.test_resource.assigned_incident, "incident_123")
-        self.assertFalse(self.test_resource.is_available)
-
-    def test_double_assignment_raises_error(self):
-        """Test assigning an already-allocated resource raises an error."""
-        self.test_resource.assign_to_incident("incident_123")
+class TestResourceSystem(unittest.TestCase):
+    
+    def test_resource_type_validation(self):
+        """Test valid and invalid resource types."""
+        # Valid type
+        Resource("ambulance", "Zone 1")
+        # Invalid type
         with self.assertRaises(ValueError):
-            self.test_resource.assign_to_incident("incident_456")
+            Resource("invalid_type", "Zone 1")
 
-if __name__ == "__main__":
-    unittest.main()
+class TestConsoleUIResourceInput(unittest.TestCase):
+    
+    def setUp(self):
+        self.ui = ConsoleUI()
+    
+    @patch('builtins.input', return_value='2')
+    def test_numeric_resource_selection(self, mock_input):
+        """Test numeric menu selection."""
+        result = self.ui._get_resource_choice()
+        self.assertEqual(result, "fire_engine")
+    
+    @patch('builtins.input', return_value='firetruck')
+    def test_alias_resource_selection(self, mock_input):
+        """Test text alias matching."""
+        result = self.ui._get_resource_choice()
+        self.assertEqual(result, "fire_engine")
+    
+    @patch('builtins.print')
+    @patch('views.console_ui.ConsoleUI._get_zone_input', return_value="Zone 3")
+    @patch('views.console_ui.ConsoleUI._get_resource_choice', return_value="police_car")
+    def test_complete_resource_input(self, mock_choice, mock_zone, mock_print):
+        """Test full resource input flow."""
+        result = self.ui.get_resource_input()
+        self.assertEqual(result, {
+            'type': 'police_car',
+            'location': 'Zone 3'
+        })

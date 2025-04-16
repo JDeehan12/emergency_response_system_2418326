@@ -2,22 +2,32 @@
 Represents an emergency response resource (e.g., ambulance, fire engine) with its attributes and availability status.
 """
 
+RESOURCE_TYPES = {
+    1: {"id": "ambulance", "name": "Ambulance", "aliases": ["medic", "paramedic"]},
+    2: {"id": "fire_engine", "name": "Fire Engine", "aliases": ["firetruck", "fire"]},
+    3: {"id": "police_car", "name": "Police Car", "aliases": ["police", "patrol"]}
+}
+
 class Resource:
     """
     A deployable emergency resource with type, location, and availability status.
-
-    Attributes:
-        resource_type (str): The type of resource (e.g., "ambulance", "fire_engine").
-        location (str): The zone where the resource is stationed (e.g., "Zone 1").
-        is_available (bool): Whether the resource is free for assignment (default True).
-        assigned_incident (str|None): ID of incident assigned to (None if unassigned).
     """
     
     def __init__(self, resource_type: str, location: str):
+        """
+        Initialise a new resource.
+        
+        Args:
+            resource_type: Must match an id from RESOURCE_TYPES
+            location: Zone identifier (e.g. "Zone 1")
+        """
+        if not any(r["id"] == resource_type for r in RESOURCE_TYPES.values()):
+            raise ValueError(f"Invalid resource type. Must be one of: {[r['id'] for r in RESOURCE_TYPES.values()]}")
+            
         self.resource_type = resource_type
         self.location = location
-        self.is_available = True  # Default to available
-        self.assigned_incident = None  # No assignment initially
+        self.is_available = True
+        self.assigned_incident = None
 
     def toggle_availability(self, new_status: bool) -> None:
         """

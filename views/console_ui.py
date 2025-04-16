@@ -3,6 +3,8 @@ Provides console-based user interface for emergency response system.
 Handles all user interactions and input validation.
 """
 
+from models.resource import RESOURCE_TYPES
+
 class ConsoleUI:
     """Handles all console input/output operations for the emergency management system."""
 
@@ -129,3 +131,61 @@ class ConsoleUI:
         for resource in resources:
             status = "Available" if resource.is_available else f"Assigned to {resource.assigned_incident[:8]}"
             print(f"{resource.resource_type:<15}{resource.location:<15}{status:<15}")
+    
+    def _display_resource_menu(self) -> None:
+        """Displays numbered resource type options."""
+        print("\nAvailable Resource Types:")
+        for num, rtype in RESOURCE_TYPES.items():
+            print(f"{num}. {rtype['name']}")
+
+    def _get_resource_choice(self) -> str:
+        """
+        Gets validated resource type selection.
+        
+        Returns:
+            str: The resource type ID
+        """
+        while True:
+            self._display_resource_menu()
+            choice = input("Select resource type (number): ").strip()
+            
+            if choice.isdigit() and int(choice) in RESOURCE_TYPES:
+                return RESOURCE_TYPES[int(choice)]["id"]
+                
+            # Try to match by name/alias
+            matched_type = self._match_resource_input(choice)
+            if matched_type:
+                return matched_type
+                
+            print(f"Invalid selection. Please choose 1-{len(RESOURCE_TYPES)} or type a resource name.")
+
+    def _match_resource_input(self, user_input: str) -> Optional[str]:
+        """
+        Flexible resource type matching.
+        
+        Args:
+            user_input: Raw user input
+            
+        Returns:
+            str: Matched resource ID or None
+        """
+        user_input = user_input.lower()
+        for rtype in RESOURCE_TYPES.values():
+            if (user_input == rtype["id"] or 
+                user_input == rtype["name"].lower() or
+                any(user_input == alias for alias in rtype["aliases"])):
+                return rtype["id"]
+        return None
+
+    def get_resource_input(self) -> dict:
+        """
+        Gets complete resource details through guided prompts.
+        
+        Returns:
+            dict: {'type': str, 'location': str}
+        """
+        print("\n=== Add New Resource ===")
+        return {
+            'type': self._get_resource_choice(),
+            'location': self._get_zone_input()
+        }
