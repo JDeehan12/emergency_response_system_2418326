@@ -7,9 +7,9 @@ class ConsoleUI:
     """Handles all console input/output operations for the emergency management system."""
 
     def __init__(self):
-        """Initializes the console interface with default settings."""
+        """Initialises the console interface with default settings."""
         self.valid_incident_types = ["fire", "accident", "crime", "medical"]
-        self.valid_priorities = ["high", "medium", "low"]
+        self.valid_priorities = ["high", "medium", "low"]  # Fixed from 'valid_priorities'
         self.min_zone = 1
         self.max_zone = 10
 
@@ -101,3 +101,31 @@ class ConsoleUI:
             if resources:
                 return resources
             print("Error: Must specify at least one resource.")
+
+    def display_incidents(self, incidents: list) -> None:
+        """
+        Displays formatted table of active incidents.
+        """
+        header = "\n=== Active Incidents ==="
+        col_header = f"{'ID':<10}{'Type':<15}{'Location':<15}{'Priority':<10}{'Status':<15}"
+        separator = "-" * 65
+        print(header)
+        print(col_header)
+        print(separator)
+        for incident in incidents:
+            print(f"{incident.id[:8]:<10}{incident.type:<15}{incident.location:<15}"
+                f"{incident.priority:<10}{incident.status:<15}")
+
+    def display_resources(self, resources: list) -> None:
+        """
+        Displays formatted table of available resources.
+        """
+        header = "\n=== Available Resources ==="
+        col_header = f"{'Type':<15}{'Location':<15}{'Status':<15}"
+        separator = "-" * 45
+        print(header)
+        print(col_header)
+        print(separator)
+        for resource in resources:
+            status = "Available" if resource.is_available else f"Assigned to {resource.assigned_incident[:8]}"
+            print(f"{resource.resource_type:<15}{resource.location:<15}{status:<15}")
