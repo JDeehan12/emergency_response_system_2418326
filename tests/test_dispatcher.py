@@ -2,6 +2,7 @@ import unittest
 from controllers.dispatcher import Dispatcher
 from models.incident import Incident
 from models.resource import Resource
+from controllers.main_controller import MainController
 
 class TestDispatcher(unittest.TestCase):
     """Tests for Dispatcher resource allocation logic."""
@@ -94,6 +95,11 @@ class TestDispatcher(unittest.TestCase):
         self.assertIn('assigned', result)
         self.assertIn('unassigned', result)
         self.assertEqual(len(result['assigned']), 1)
+
+    def test_default_resources_loading(self):
+        """Test default resources are loaded."""
+        controller = MainController()
+        self.assertEqual(len(controller.dispatcher.resources), 6)
 
 if __name__ == "__main__":
     unittest.main()

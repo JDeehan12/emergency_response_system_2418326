@@ -15,6 +15,17 @@ class MainController:
         """Initialize application components."""
         self.ui = ConsoleUI()
         self.dispatcher = Dispatcher()
+        self._load_default_resources()
+
+    def _load_default_resources(self):
+        """Preloads default resources."""
+        defaults = [
+            ("ambulance", "Zone 1"), ("ambulance", "Zone 2"),
+            ("fire_engine", "Zone 1"), ("fire_engine", "Zone 2"),
+            ("police_car", "Zone 1"), ("police_car", "Zone 2")
+        ]
+        for r_type, location in defaults:
+            self.dispatcher.add_resource(Resource(r_type, location))
         
     def run(self) -> None:
         """Main application loop handling user choices."""
