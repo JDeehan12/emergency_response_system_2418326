@@ -1,6 +1,7 @@
 """
 Represents an emergency response resource (e.g., ambulance, fire engine) with its attributes and availability status.
 """
+import uuid # Adds automatic UUIDs generation for resources
 
 RESOURCE_TYPES = {
     1: {"id": "ambulance", "name": "Ambulance", "aliases": ["medic", "paramedic"]},
@@ -23,7 +24,8 @@ class Resource:
         """
         if not any(r["id"] == resource_type for r in RESOURCE_TYPES.values()):
             raise ValueError(f"Invalid resource type. Must be one of: {[r['id'] for r in RESOURCE_TYPES.values()]}")
-            
+        
+        self.id = f"RES-{uuid.uuid4().hex[:6]}"  # 6-char unique ID
         self.resource_type = resource_type
         self.location = location
         self.is_available = True
