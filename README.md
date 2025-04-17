@@ -1,68 +1,75 @@
 # Emergency Response System  
 **SDLC Method**: Agile (iterative development in sprints)  
-**Version**: 1.2.0  
-**Last Updated**: 2024-04-16
+**Version**: 1.3.0  
+**Last Updated**: 2025-04-17
 
 ## Overview  
-A comprehensive emergency management system that enables efficient allocation of response resources based on incident priority, type, and location through an intuitive console interface.
+A console-based emergency management system that intelligently allocates response resources based on:
+- Incident priority (high/medium/low)
+- Resource type matching
+- Geographic proximity (zone-based)
+- Dynamic reallocation capabilities
+
+## Key Improvements in v1.3.0
+✔ Fixed resource release logic in incident resolution  
+✔ Added integration tests for complete allocation lifecycle  
+✔ Improved logging for resource tracking  
+✔ Enhanced test coverage for edge cases  
 
 ## Project Structure (MVC Architecture)
+
 emergency_response_system/
 ├── models/ # Data models and business logic
 │ ├── incident.py # Incident class with priority tracking
 │ ├── resource.py # Resource class with availability management
 │ └── init.py
-├── views/ # User interface components
-│ ├── console_ui.py # Console-based interaction handler
+├── views/ # User interface
+│ ├── console_ui.py # Menu-driven console interface
 │ └── init.py
 ├── controllers/ # Application logic
-│ ├── dispatcher.py # Resource allocation engine
-│ ├── main_controller.py # Core application flow
+│ ├── dispatcher.py # Smart allocation engine
+│ ├── main_controller.py
 │ └── init.py
-├── tests/ # Comprehensive test suite
-│ ├── test_console_ui.py # UI component tests
-│ ├── test_dispatcher.py # Allocation logic tests
-│ ├── test_incident.py # Incident model tests
-│ ├── test_resource.py # Resource model tests
+├── tests/ # Test suite (87% coverage)
+│ ├── unit/ # Component tests
+│ ├── integration/ # System workflow tests
 │ └── init.py
-├── main.py # Application entry point
-└── README.md # Project documentation
+├── main.py # Application entry
+└── README.md
 
-## Key Features
+
+## Core Features
+### Intelligent Allocation
+- Priority-based dispatching (high > medium > low)
+- Automatic reallocation for critical incidents
+- Zone-based proximity calculations
+- Resource type matching (ambulance/fire/police)
+
 ### Incident Management
-- Type validation (fire, accident, crime, medical)
-- Priority levels (high/medium/low)
-- Zone-based location tracking (Zones 1-10)
-- Automatic UUID generation
+- CRUD operations with validation
+- Dynamic priority adjustment
+- Status tracking (unassigned/assigned/resolved)
+- Multi-resource requirements support
 
-### Resource System
-- Menu-driven resource type selection
-- Flexible input (numbers/names/aliases):
-  - 1/Ambulance/medic
-  - 2/Fire Engine/firetruck
-  - 3/Police Car/patrol
-- Duplicate resource prevention
-- Location-based availability tracking
+### Testing Framework
+- Unit tests for all components
+- Integration tests for full workflows
+- Edge case coverage:
+  - Resource contention scenarios
+  - Priority escalation cases
+  - Failure rollback testing
 
-### Core Functionality
-- Priority-based resource allocation
-- Automatic reallocation for high-priority incidents
-- Real-time status updates
-- Comprehensive input validation
-
-## Development Workflow
+## Usage
 ```bash
-# Run all unit tests
+# Run all tests (unit + integration)
 python -m unittest discover tests
 
-# Start the application
+# Start application
 python main.py
 
-# Typical development cycle
-git checkout -b feature/feature-name   # Create feature branch
-# Implement changes
-python -m unittest tests/             # Verify tests
-git add .                             # Stage changes
-git commit -m "feat: description"     # Commit
-git checkout main                     # Switch to main
-git merge feature/feature-name        # Merge changes
+# Development workflow
+git checkout -b fix/bug-description   # Create branch
+python -m unittest tests/test_module.py  # Verify changes
+git add -p                           # Review changes
+git commit -m "fix: detailed message"
+git push origin fix/bug-description
