@@ -62,55 +62,56 @@ class Dispatcher:
                         reallocated = self._reallocate_for_high_priority(incident)
                         if reallocated:
                             incident.status = 'assigned'
-        
 
     def _assign_resources_to_incident(self, incident: Incident) -> bool:
         """
         Assigns all required resources to an incident.
         Returns True if all resources were assigned, False otherwise.
+        If assignment fails, releases any partially assigned resources.
         """
+        assigned_resources = []
         all_assigned = True
-            
+        
         for resource_type in incident.required_resources:
-            resource = self._find_optimal_resource(resource_type, incident.location)
+            resource = self._find_optimal_resource(resource_type, incident.location, incident)
             if resource:
                 resource.assign_to_incident(incident.id)
-                # Track assignment without requiring resource.id
+                assigned_resources.append(resource)
                 self.allocation_log[f"{incident.id}_{resource_type}"] = resource.resource_type
             else:
                 all_assigned = False
+                break  # Stop if we can't assign any resource
         
-        return all_assigned
+        if not all_assigned:
+            # Rollback any partial assignments
+            for resource in assigned_resources:
+                resource.release()
+                # Clean up allocation log
+                for key in [k for k in self.allocation_log if k.startswith(incident.id)]:
+                    del self.allocation_log[key]
+            return False
+        
+        return True
 
     def _find_optimal_resource(self, resource_type: str, location: str, incident: Incident) -> Optional[Resource]:
         """
         Finds the best available resource considering both type and proximity.
-        Now excludes resources already assigned to other incidents.
-        
-        Args:
-            resource_type: Type of resource needed
-            location: Incident location (e.g., "Zone 1")
-            incident: The incident we're assigning to
-            
-        Returns:
-            The optimal available Resource or None
+        Now includes incident parameter for priority consideration.
         """
-        # Get available resources or resources already assigned to THIS incident
-        candidates = [
-            r for r in self.resources 
-            if (r.resource_type == resource_type and 
-                (r.is_available or r.assigned_incident == incident.id))
-        ]
+        # Get all available matching resources
+        candidates = [r for r in self.resources 
+                    if r.resource_type == resource_type 
+                    and r.is_available]
         
         if not candidates:
             return None
             
-        # Prioritize exact location matches first
-        exact_matches = [r for r in candidates if r.location == location]
-        if exact_matches:
-            return exact_matches[0]
-            
-        # Then find nearest available
+        # Check for exact location match first
+        for resource in candidates:
+            if resource.location == location:
+                return resource
+                
+        # Find nearest available resource
         return min(
             candidates,
             key=lambda x: self._location_distance(x.location, location)
