@@ -1,6 +1,6 @@
 # Emergency Response System  
 **SDLC Method**: Agile (iterative development in sprints)  
-**Version**: 1.3.0  
+**Version**: 1.3.1
 **Last Updated**: 2025-04-17
 
 ## Overview  
