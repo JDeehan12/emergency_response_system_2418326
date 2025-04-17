@@ -2,10 +2,12 @@
 Handles the allocation and reallocation of emergency resources to incidents.
 Manages priority-based distribution and proximity considerations.
 """
-
+import logging
+from datetime import datetime
 from typing import List, Dict, Optional
 from models.incident import Incident
 from models.resource import Resource
+logging.basicConfig(level=logging.INFO)
 
 class Dispatcher:
     """
@@ -20,6 +22,8 @@ class Dispatcher:
 
     def add_incident(self, incident: Incident) -> None:
         """Registers a new incident and triggers automatic allocation."""
+        if not isinstance(incident, Incident):
+            raise TypeError("Must provide Incident object")
         self.incidents.append(incident)
         self._allocate_resources()
 
@@ -78,27 +82,35 @@ class Dispatcher:
         
         return all_assigned
 
-    def _find_optimal_resource(self, resource_type: str, location: str) -> Optional[Resource]:
+    def _find_optimal_resource(self, resource_type: str, location: str, incident: Incident) -> Optional[Resource]:
         """
         Finds the best available resource considering both type and proximity.
-        Priority:
-        1. Matching type at exact location
-        2. Matching type at nearest location
+        Now excludes resources already assigned to other incidents.
+        
+        Args:
+            resource_type: Type of resource needed
+            location: Incident location (e.g., "Zone 1")
+            incident: The incident we're assigning to
+            
+        Returns:
+            The optimal available Resource or None
         """
-        # Get all available matching resources
-        candidates = [r for r in self.resources 
-                     if r.resource_type == resource_type 
-                     and r.is_available]
+        # Get available resources or resources already assigned to THIS incident
+        candidates = [
+            r for r in self.resources 
+            if (r.resource_type == resource_type and 
+                (r.is_available or r.assigned_incident == incident.id))
+        ]
         
         if not candidates:
             return None
             
-        # Check for exact location match first
-        for resource in candidates:
-            if resource.location == location:
-                return resource
-                
-        # Find nearest available resource
+        # Prioritize exact location matches first
+        exact_matches = [r for r in candidates if r.location == location]
+        if exact_matches:
+            return exact_matches[0]
+            
+        # Then find nearest available
         return min(
             candidates,
             key=lambda x: self._location_distance(x.location, location)

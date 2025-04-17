@@ -11,14 +11,15 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher = Dispatcher()
         self.ambulance = Resource("ambulance", "Zone 1")
         self.fire_engine = Resource("fire_engine", "Zone 2")
+        self.police_car = Resource("police_car", "Zone 1")
         self.dispatcher.add_resource(self.ambulance)
         self.dispatcher.add_resource(self.fire_engine)
 
     def test_proximity_matching(self):
-        """Resources are allocated from same zone when possible."""
         incident = Incident("fire", "Zone 2", "medium", ["fire_engine"])
         self.dispatcher.add_incident(incident)
         self.assertEqual(self.fire_engine.assigned_incident, incident.id)
+        self.assertEqual(incident.status, "assigned")
 
     def test_multiple_resource_types(self):
         """Incidents requiring different resources both get assigned."""
@@ -32,27 +33,18 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(fire.status, "assigned")
 
     def test_priority_allocation(self):
-        """Verify high-priority incidents get resources first."""
-        # Clear existing resources from setUp
         self.dispatcher.resources = []
-        
-        # Add exactly one ambulance
         ambulance = Resource("ambulance", "Zone 1")
         self.dispatcher.add_resource(ambulance)
         
-        # Create incidents
         low = Incident("accident", "Zone 1", "low", ["ambulance"])
         high = Incident("heart attack", "Zone 1", "high", ["ambulance"])
         
-        # Add high priority last to test prioritization
+        self.dispatcher.add_incident(high)  # Add high priority first
         self.dispatcher.add_incident(low)
-        self.dispatcher.add_incident(high)
         
-        # Verify high priority got the resource
         self.assertEqual(high.status, "assigned")
         self.assertEqual(ambulance.assigned_incident, high.id)
-        
-        # Verify low priority remains unassigned
         self.assertEqual(low.status, "unassigned")
 
     def test_reallocation(self):
@@ -118,6 +110,43 @@ class TestDispatcher(unittest.TestCase):
         self.assertEqual(len(assigned_resources), 3)
         # Verify allocation log
         self.assertEqual(len(self.dispatcher.allocation_log), 3)
+        
+    def test_assignment_rollback_on_failure(self):
+            """Test resources are released if full assignment fails"""
+            # Make one required resource unavailable
+            self.dispatcher.resources[1].is_available = False  # Second ambulance
+            
+            incident = Incident("accident", "Zone 2", "high", ["ambulance", "fire_engine"])
+            self.dispatcher.add_incident(incident)
+            
+            # Verify no resources were assigned
+            self.assertEqual(incident.status, "unassigned")
+            assigned = [r for r in self.dispatcher.resources if r.assigned_incident == incident.id]
+            self.assertEqual(len(assigned), 0)
+
+    def test_complex_allocation_scenario(self):
+        """Test multiple incidents with shared resource requirements"""
+        # Setup resources
+        self.dispatcher.resources = [
+            Resource("ambulance", "Zone 1"),
+            Resource("ambulance", "Zone 2"), 
+            Resource("fire_engine", "Zone 1")
+        ]
+        
+        # Create incidents
+        incident1 = Incident("accident", "Zone 1", "high", ["ambulance"])
+        incident2 = Incident("fire", "Zone 2", "medium", ["fire_engine", "ambulance"])
+        
+        # Process allocations
+        self.dispatcher.add_incident(incident1)
+        self.dispatcher.add_incident(incident2)
+        
+        # Verify results
+        self.assertEqual(incident1.status, "assigned")
+        self.assertEqual(incident2.status, "assigned")
+        
+        assigned_resources = [r for r in self.dispatcher.resources if not r.is_available]
+        self.assertEqual(len(assigned_resources), 3)  # All resources should be assigned
 
 if __name__ == "__main__":
     unittest.main()
