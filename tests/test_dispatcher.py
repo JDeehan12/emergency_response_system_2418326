@@ -105,11 +105,15 @@ class TestDispatcher(unittest.TestCase):
                         ["ambulance", "fire_engine", "police_car"])
         self.dispatcher.add_incident(incident)
         
+        # Verify all resources assigned
         assigned_resources = [r for r in self.dispatcher.resources 
                             if r.assigned_incident == incident.id]
         self.assertEqual(len(assigned_resources), 3)
-        # Verify allocation log
-        self.assertEqual(len(self.dispatcher.allocation_log), 3)
+        
+        # Verify allocation log (now using resource IDs instead of types)
+        log_entries = [v for k,v in self.dispatcher.allocation_log.items() 
+                    if k.startswith(incident.id)]
+        self.assertEqual(len(log_entries), 3)
 
     def test_assignment_rollback_on_failure(self):
         """Test resources are released if full assignment fails."""

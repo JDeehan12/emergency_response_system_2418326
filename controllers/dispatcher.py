@@ -221,4 +221,28 @@ class Dispatcher:
         # Log the released resources
         logging.info(f"Resolved incident {incident_id}. Released resources: {[r.id for r in assigned_resources]}")
 
+    def _release_resources_of_type(self, resource_type):
+        """Release all resources of specific type"""
+        for r in self.resources:
+            if r.resource_type == resource_type and not r.is_available:
+                r.release()
+
+    def _assign_resources_to_incident(self, incident):
+        # Clear existing assignments and log entries
+        for key in [k for k in self.allocation_log if k.startswith(incident.id)]:
+            del self.allocation_log[key]
+        
+        # Attempt new assignment
+        success = True
+        for res_type in incident.required_resources:
+            resource = self._find_optimal_resource(res_type, incident.location, incident)
+            if not resource:
+                success = False
+                break
+            resource.assign_to_incident(incident.id)
+            self.allocation_log[f"{incident.id}_{res_type}"] = resource.id  # Log the assignment
+        
+        incident.update_status(self)
+        return success
+
 

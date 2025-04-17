@@ -68,23 +68,28 @@ class ConsoleUI:
         while True:
             print("\n=== Required Resources ===")
             print("Current selection:", ", ".join(selected) if selected else "None")
-            print("0. Done selecting")
-            self._display_resource_menu()
+            print("0. Done | 1. Ambulance | 2. Fire Engine | 3. Police Car")
+            print("(Select number again to toggle resource)")
             
-            choice = input("Add resource (0-3): ").strip()
+            choice = input("Add/Remove resource (0-3): ").strip()
+            
+            # Validate input
+            if choice not in ('0', '1', '2', '3'):
+                print("Invalid input. Please enter 0-3")
+                continue
+                
             if choice == '0':
                 if not selected:
                     print("Error: At least one resource required")
                     continue
                 return selected
-            elif choice.isdigit() and int(choice) in RESOURCE_TYPES:
-                resource = RESOURCE_TYPES[int(choice)]["id"]
-                if resource not in selected:
-                    selected.append(resource)
-                else:
-                    print(f"{resource} already selected.")
+                
+            # Toggle resource selection
+            resource = RESOURCE_TYPES[int(choice)]["id"]
+            if resource in selected:
+                selected.remove(resource)
             else:
-                print("Invalid selection. Please try again.")
+                selected.append(resource)
 
     def _get_valid_input(self, prompt: str, options: list[str]) -> str:
         """

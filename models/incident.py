@@ -54,3 +54,9 @@ class Incident:
         """
         return [r for r in dispatcher.resources 
                 if r.assigned_incident == self.id]
+    
+    def update_status(self, dispatcher):
+        """Dynamic status update based on actual resource assignments"""
+        assigned_resources = [r for r in dispatcher.resources 
+                            if r.assigned_incident == self.id]
+        self.status = "assigned" if assigned_resources else "unassigned"
