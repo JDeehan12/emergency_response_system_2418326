@@ -110,28 +110,24 @@ class TestDispatcher(unittest.TestCase):
                             if r.assigned_incident == incident.id]
         self.assertEqual(len(assigned_resources), 3)
         
-        # Verify allocation log (now using resource IDs instead of types)
+        # Verify allocation log now uses resource IDs
         log_entries = [v for k,v in self.dispatcher.allocation_log.items() 
                     if k.startswith(incident.id)]
         self.assertEqual(len(log_entries), 3)
-
-    def test_assignment_rollback_on_failure(self):
-        """Test resources are released if full assignment fails."""
-        # Setup - only one available resource
-        self.dispatcher.resources = [
-            Resource("ambulance", "Zone 1"),
-            Resource("fire_engine", "Zone 1")  # Only two resources available
-        ]
-        
-        # Incident requiring three resources
-        incident = Incident("major", "Zone 1", "high", 
-                        ["ambulance", "fire_engine", "police_car"])
-        self.dispatcher.add_incident(incident)
-        
-        # Verify rollback occurred
-        self.assertEqual(incident.status, "unassigned")
-        assigned = [r for r in self.dispatcher.resources if not r.is_available]
-        self.assertEqual(len(assigned), 0)  # No resources should remain assigned
+        def test_assignment_rollback_on_failure(self):
+            self.dispatcher.resources = [
+                Resource("ambulance", "Zone 1"),
+                Resource("fire_engine", "Zone 1")  # Deliberately missing police_car
+            ]
+            
+            incident = Incident("major", "Zone 1", "high", 
+                            ["ambulance", "fire_engine", "police_car"])
+            self.dispatcher.add_incident(incident)
+            
+            # Verify rollback occurred
+            self.assertEqual(incident.status, "unassigned")
+            assigned = [r for r in self.dispatcher.resources if not r.is_available]
+            self.assertEqual(len(assigned), 0)
 
     def test_complex_allocation_scenario(self):
         """Test multiple incidents with shared resource requirements"""

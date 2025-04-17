@@ -63,7 +63,13 @@ class ConsoleUI:
             print(f"Invalid selection. Please enter 1-{len(options)}")
 
     def _select_resources(self) -> list:
-        """Gets resource selection from menu."""
+        """
+        Gets resource selection from user through console prompts.
+        Implements toggle functionality for adding/removing resources.
+        
+        Returns:
+            list: Sorted list of unique resource types selected
+        """
         selected = []
         while True:
             print("\n=== Required Resources ===")
@@ -73,23 +79,28 @@ class ConsoleUI:
             
             choice = input("Add/Remove resource (0-3): ").strip()
             
-            # Validate input
+            # Validate input against allowed options
             if choice not in ('0', '1', '2', '3'):
                 print("Invalid input. Please enter 0-3")
                 continue
                 
+            # Handle completion request
             if choice == '0':
                 if not selected:
                     print("Error: At least one resource required")
                     continue
-                return selected
+                return sorted(selected)  # Return alphabetically sorted list
                 
             # Toggle resource selection
             resource = RESOURCE_TYPES[int(choice)]["id"]
             if resource in selected:
                 selected.remove(resource)
             else:
-                selected.append(resource)
+                # Ensure no duplicate resource types
+                if resource not in selected:
+                    selected.append(resource)
+                else:
+                    print(f"Note: {resource} already in selection")
 
     def _get_valid_input(self, prompt: str, options: list[str]) -> str:
         """
@@ -136,21 +147,28 @@ class ConsoleUI:
                 return resources
             print("Error: Must specify at least one resource.")
 
-    def display_incidents(self, incidents: list, dispatcher: Dispatcher) -> None:
+    def display_incidents(self, incidents, dispatcher):
         """Displays incidents with assignment info."""
         print("\n=== Active Incidents ===")
-        print(f"{'ID':<8}{'Type':<12}{'Location':<10}{'Priority':<10}{'Status':<12}{'Assigned Resources':<20}")
+        print(f"{'ID':<8}{'Type':<12}{'Location':<10}{'Priority':<10}{'Status':<12}{'Resources':<20}")
         print("-" * 72)
         for incident in incidents:
-            # Get ALL assigned resources for this incident
-            resources = [r.resource_type for r in dispatcher.resources 
+            resources = [r for r in dispatcher.resources 
                         if r.assigned_incident == incident.id]
-            # Remove duplicates while preserving order
-            unique_resources = []
-            [unique_resources.append(r) for r in resources if r not in unique_resources]
-            res_str = ", ".join(unique_resources) if unique_resources else "None"
+            
+            # More precise status detection
+            if incident.status == 'unassigned' and resources:
+                # Verify if resources are actually available
+                conflicting = any(r.assigned_incident != incident.id 
+                            for r in dispatcher.resources 
+                            if not r.is_available and r.resource_type in incident.required_resources)
+                status = "CONFLICT" if conflicting else "PARTIAL"
+            else:
+                status = incident.status
+                
+            res_str = ", ".join(r.resource_type for r in resources) if resources else "None"
             print(f"{incident.id:<8}{incident.type:<12}{incident.location:<10}"
-                f"{incident.priority:<10}{incident.status:<12}{res_str:<20}")
+                f"{incident.priority:<10}{status:<12}{res_str:<20}")
 
     def display_resources(self, resources: list) -> None:
         """

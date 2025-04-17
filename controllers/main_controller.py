@@ -80,3 +80,24 @@ class MainController:
             
         except ValueError as e:
             print(f"[ERROR] {str(e)}")
+
+    def _handle_allocation(self):
+        """Handle manual resource allocation with proper status updates"""
+        print("\n=== Performing Smart Allocation ===")
+        print("1. Checking all high-priority incidents")
+        print("2. Reallocating resources where needed")
+        print("3. Verifying assignments...\n")
+        
+        result = self.dispatcher.allocate_resources()
+        
+        # Detailed reporting
+        assigned = [i for i in self.dispatcher.incidents if i.status == 'assigned']
+        unassigned = [i for i in self.dispatcher.incidents if i.status == 'unassigned']
+        
+        print("\n=== Allocation Report ===")
+        print(f"Successfully assigned: {len(assigned)} incidents")
+        if unassigned:
+            print(f"Needs attention:")
+            for incident in unassigned:
+                required = ", ".join(incident.required_resources)
+                print(f" - {incident.id} ({incident.type} in {incident.location}) needs: {required}")
