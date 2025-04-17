@@ -41,3 +41,16 @@ class Incident:
             new_status (str): E.g., "unassigned", "assigned", "resolved".
         """
         self.status = new_status
+
+    def get_assigned_resources(self, dispatcher) -> list:
+        """
+        Returns list of resources currently assigned to this incident.
+        
+        Args:
+            dispatcher: The Dispatcher instance managing resources
+            
+        Returns:
+            list: List of Resource objects assigned to this incident
+        """
+        return [r for r in dispatcher.resources 
+                if r.assigned_incident == self.id]
