@@ -101,5 +101,23 @@ class TestDispatcher(unittest.TestCase):
         controller = MainController()
         self.assertEqual(len(controller.dispatcher.resources), 6)
 
+    def test_multiple_resource_assignment(self):
+        """Test incident can be assigned multiple resources."""
+        self.dispatcher.resources = [
+            Resource("ambulance", "Zone 1"),
+            Resource("fire_engine", "Zone 1"),
+            Resource("police_car", "Zone 1")
+        ]
+        
+        incident = Incident("major", "Zone 1", "high", 
+                        ["ambulance", "fire_engine", "police_car"])
+        self.dispatcher.add_incident(incident)
+        
+        assigned_resources = [r for r in self.dispatcher.resources 
+                            if r.assigned_incident == incident.id]
+        self.assertEqual(len(assigned_resources), 3)
+        # Verify allocation log
+        self.assertEqual(len(self.dispatcher.allocation_log), 3)
+
 if __name__ == "__main__":
     unittest.main()

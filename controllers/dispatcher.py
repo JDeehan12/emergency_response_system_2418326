@@ -59,21 +59,24 @@ class Dispatcher:
                         if reallocated:
                             incident.status = 'assigned'
         
+
     def _assign_resources_to_incident(self, incident: Incident) -> bool:
         """
-        Attempts to assign all required resources to an incident.
+        Assigns all required resources to an incident.
         Returns True if all resources were assigned, False otherwise.
         """
-        required = incident.required_resources.copy()
-        
-        for resource_type in required:
+        all_assigned = True
+            
+        for resource_type in incident.required_resources:
             resource = self._find_optimal_resource(resource_type, incident.location)
             if resource:
                 resource.assign_to_incident(incident.id)
-                self.allocation_log[incident.id] = resource.resource_type
-                required.remove(resource_type)
+                # Track assignment without requiring resource.id
+                self.allocation_log[f"{incident.id}_{resource_type}"] = resource.resource_type
+            else:
+                all_assigned = False
         
-        return len(required) == 0
+        return all_assigned
 
     def _find_optimal_resource(self, resource_type: str, location: str) -> Optional[Resource]:
         """

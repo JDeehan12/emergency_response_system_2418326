@@ -137,9 +137,13 @@ class ConsoleUI:
         print(f"{'ID':<8}{'Type':<12}{'Location':<10}{'Priority':<10}{'Status':<12}{'Assigned Resources':<20}")
         print("-" * 72)
         for incident in incidents:
+            # Get ALL assigned resources for this incident
             resources = [r.resource_type for r in dispatcher.resources 
                         if r.assigned_incident == incident.id]
-            res_str = ", ".join(resources) if resources else "None"
+            # Remove duplicates while preserving order
+            unique_resources = []
+            [unique_resources.append(r) for r in resources if r not in unique_resources]
+            res_str = ", ".join(unique_resources) if unique_resources else "None"
             print(f"{incident.id:<8}{incident.type:<12}{incident.location:<10}"
                 f"{incident.priority:<10}{incident.status:<12}{res_str:<20}")
 
