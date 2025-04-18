@@ -39,7 +39,7 @@ class MainController:
             elif choice == '3':  # View incidents
                 self.ui.display_incidents(self.dispatcher.incidents, self.dispatcher)  # Added dispatcher
             elif choice == '4':  # View resources
-                self.ui.display_resources(self.dispatcher.resources)
+                self.ui.display_resources(self.dispatcher.resources, self.dispatcher)
             elif choice == '5':  # Allocate resources
                 result = self.dispatcher.allocate_resources()
                 print(f"\nAllocation completed:")
@@ -64,16 +64,9 @@ class MainController:
         print(f"Incident {incident.id[:8]} reported successfully.")
 
     def _handle_add_resource(self):
-        """Handles complete resource addition workflow with duplicate checking."""
+        """Handles resource addition without duplicate checking."""
         try:
-            data = self.ui.get_resource_input()
-            
-            # Check for existing identical resource
-            if any(r.resource_type == data['type'] and 
-                r.location == data['location']
-                for r in self.dispatcher.resources):
-                raise ValueError(f"Resource {data['type']} already exists at {data['location']}")
-                
+            data = self.ui.get_resource_input()                
             resource = Resource(data['type'], data['location'])
             self.dispatcher.add_resource(resource)
             print(f"[SUCCESS] Added {data['type']} at {data['location']}")

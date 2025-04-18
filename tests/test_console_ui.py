@@ -3,6 +3,7 @@ Unit tests for console user interface components.
 """
 import unittest
 from unittest.mock import patch
+from unittest.mock import MagicMock
 from views.console_ui import ConsoleUI
 from models.incident import Incident
 from models.resource import Resource
@@ -59,50 +60,23 @@ class TestConsoleUI(unittest.TestCase):
         expected_line = "test1234fire        Zone 1    high      unassigned  None                "
         self.assertIn(expected_line, printed_lines)
 
-    @patch('builtins.print')
-    def test_display_resources(self, mock_print):
+    def test_display_resources(self):
         """Test resource display formatting."""
         test_resource = Resource("ambulance", "Zone 1")
         test_resource.assigned_incident = "incident_5678"
         test_resource.is_available = False
         
-        self.ui.display_resources([test_resource])
+        # Mock dispatcher
+        mock_dispatcher = MagicMock()
+        mock_incident = MagicMock(location="Zone 5")
+        mock_dispatcher._get_incident_by_id.return_value = mock_incident
         
-        # Get all printed lines
+        with patch('builtins.print') as mock_print:
+            self.ui.display_resources([test_resource], mock_dispatcher)
+            
+        # Verify output contains the assigned location
         printed_lines = [call[0][0] for call in mock_print.call_args_list]
-        
-        # Verify the data line exists in output
-        expected_line = "ambulance      Zone 1         Assigned to incident"
-        self.assertIn(expected_line, printed_lines)
-
-    def test_duplicate_resource_prevention(self):
-        """Verify system prevents adding duplicate resources."""
-        # Initialize with empty dispatcher
-        controller = MainController()
-        controller.dispatcher.resources = []  # Ensure clean state
-        
-        # Mock resource input
-        test_resource = {'type': 'ambulance', 'location': 'Zone 1'}
-        
-        # First addition (should succeed)
-        with patch('views.console_ui.ConsoleUI.get_resource_input', 
-                return_value=test_resource):
-            with patch('builtins.print') as mock_print:
-                controller._handle_add_resource()
-                success_msgs = [args[0] for args, _ in mock_print.call_args_list]
-                self.assertTrue(any("[SUCCESS]" in msg for msg in success_msgs))
-        
-        # Attempt duplicate (should fail)
-        with patch('views.console_ui.ConsoleUI.get_resource_input',
-                return_value=test_resource):
-            with patch('builtins.print') as mock_print:
-                controller._handle_add_resource()
-                error_msgs = [args[0] for args, _ in mock_print.call_args_list]
-                self.assertTrue(any("[ERROR]" in msg for msg in error_msgs))
-                self.assertTrue(any("already exists" in msg for msg in error_msgs))
-        
-        # Verify only one resource was added
-        self.assertEqual(len(controller.dispatcher.resources), 1)
+        self.assertTrue(any("Zone 5" in line for line in printed_lines))
     
     def test_menu_with_allocation_option(self):
         """Test menu shows allocation option."""

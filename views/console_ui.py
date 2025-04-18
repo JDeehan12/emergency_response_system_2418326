@@ -170,20 +170,36 @@ class ConsoleUI:
             print(f"{incident.id:<8}{incident.type:<12}{incident.location:<10}"
                 f"{incident.priority:<10}{status:<12}{res_str:<20}")
 
-    def display_resources(self, resources: list) -> None:
+    def display_resources(self, resources: list, dispatcher: Dispatcher = None) -> None:
         """
         Displays formatted table of available resources.
+        Args:
+            resources: List of Resource objects
+            dispatcher: Optional Dispatcher instance for location lookup
         """
         header = "\n=== Available Resources ==="
-        col_header = f"{'Type':<15}{'Location':<15}{'Status':<15}"
+        col_header = f"{'Type':<15}{'Current Location':<15}{'Status':<15}"
         separator = "-" * 45
         print(header)
         print(col_header)
         print(separator)
+        
         for resource in resources:
-            status = "Available" if resource.is_available else f"Assigned to {resource.assigned_incident[:8]}"
-            print(f"{resource.resource_type:<15}{resource.location:<15}{status:<15}")
-    
+            if resource.is_available:
+                status = "Available"
+                location = resource.location
+            else:
+                location = resource.location  # Default to original location
+                if dispatcher:
+                    try:
+                        incident = dispatcher._get_incident_by_id(resource.assigned_incident)
+                        location = incident.location
+                    except Exception:
+                        pass
+                status = f"Assigned to {resource.assigned_incident[:8]}"
+                
+            print(f"{resource.resource_type:<15}{location:<15}{status:<15}")
+        
     def _display_resource_menu(self) -> None:
         """Displays numbered resource type options."""
         print("\nAvailable Resource Types:")

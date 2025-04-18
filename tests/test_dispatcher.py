@@ -153,5 +153,15 @@ class TestDispatcher(unittest.TestCase):
         assigned_resources = [r for r in self.dispatcher.resources if not r.is_available]
         self.assertEqual(len(assigned_resources), 3)  # All resources should be assigned
 
+    def test_duplicate_resources_allowed(self):
+        """Verify multiple resources can exist at same location."""
+        # Clear existing test resources first
+        self.dispatcher.resources = []
+        
+        self.dispatcher.add_resource(Resource("ambulance", "Zone 1"))
+        self.dispatcher.add_resource(Resource("ambulance", "Zone 1"))
+        self.assertEqual(len([r for r in self.dispatcher.resources 
+                            if r.resource_type == "ambulance" and r.location == "Zone 1"]), 2)
+
 if __name__ == "__main__":
     unittest.main()
