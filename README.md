@@ -1,6 +1,6 @@
 # Emergency Response System  
 **SDLC Method**: Agile (iterative development in sprints)  
-**Version**: 1.3.2
+**Version**: 1.3.3
 **Last Updated**: 2025-04-17
 
 ## Overview  
@@ -10,11 +10,11 @@ A console-based emergency management system that intelligently allocates respons
 - Geographic proximity (zone-based)
 - Dynamic reallocation capabilities
 
-## Key Improvements in v1.3.0
-✔ Fixed resource release logic in incident resolution  
-✔ Added integration tests for complete allocation lifecycle  
-✔ Improved logging for resource tracking  
-✔ Enhanced test coverage for edge cases  
+## Key Improvements in v1.3.3
+-  Resources now show current operational location
+-  Unlimited resources can be added to any zone
+-  Fixed resource display in console UI
+-  Updated test cases for new behavior
 
 ## Project Structure (MVC Architecture)
 
