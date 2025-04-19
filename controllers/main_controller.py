@@ -37,7 +37,7 @@ class MainController:
             elif choice == '2':  # Add resource
                 self._handle_add_resource()
             elif choice == '3':  # View incidents
-                self.ui.display_incidents(self.dispatcher.incidents, self.dispatcher)  # Added dispatcher
+                self.ui.display_incidents(self.dispatcher.incidents, self.dispatcher)
             elif choice == '4':  # View resources
                 self.ui.display_resources(self.dispatcher.resources, self.dispatcher)
             elif choice == '5':  # Allocate resources

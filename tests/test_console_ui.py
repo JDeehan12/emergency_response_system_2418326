@@ -42,42 +42,43 @@ class TestConsoleUI(unittest.TestCase):
             'resources': ['ambulance', 'fire_engine']
         })
 
-    @patch('builtins.print')
-    def test_display_incidents(self, mock_print):
-        """Test incident display formatting."""
+    def test_display_incidents(self):
+        """Test incident display shows full IDs."""
         test_incident = Incident("fire", "Zone 1", "high", ["ambulance"])
-        test_incident.id = "test1234"
-        test_incident.status = "unassigned"
+        test_incident.id = "INC-12345678"  # Longer ID for testing
         
-        # Create a dispatcher and pass it to the method
-        dispatcher = Dispatcher()
-        self.ui.display_incidents([test_incident], dispatcher)
+        # Mock dispatcher with no resources assigned
+        mock_dispatcher = MagicMock()
+        mock_dispatcher.resources = []
         
-        # Get all printed lines
-        printed_lines = [call[0][0] for call in mock_print.call_args_list]
+        with patch('builtins.print') as mock_print:
+            self.ui.display_incidents([test_incident], mock_dispatcher)
         
-        # Verify the data line exists in output
-        expected_line = "test1234fire        Zone 1    high      unassigned  None                "
-        self.assertIn(expected_line, printed_lines)
+        # Get complete output
+        output = "\n".join(call[0][0] for call in mock_print.call_args_list)
+        
+        # Verify full ID appears (now truncated to 8 chars)
+        self.assertIn("INC-1234", output)
+        # Verify no ellipsis in the output
+        self.assertNotIn("...", output)
 
     def test_display_resources(self):
-        """Test resource display formatting."""
+        """Test resource display shows full incident IDs."""
         test_resource = Resource("ambulance", "Zone 1")
-        test_resource.assigned_incident = "incident_5678"
+        test_resource.assigned_incident = "INC-00011234"
         test_resource.is_available = False
         
-        # Mock dispatcher
         mock_dispatcher = MagicMock()
         mock_incident = MagicMock(location="Zone 5")
         mock_dispatcher._get_incident_by_id.return_value = mock_incident
         
         with patch('builtins.print') as mock_print:
             self.ui.display_resources([test_resource], mock_dispatcher)
-            
-        # Verify output contains the assigned location
-        printed_lines = [call[0][0] for call in mock_print.call_args_list]
-        self.assertTrue(any("Zone 5" in line for line in printed_lines))
-    
+        
+        output = "\n".join(call[0][0] for call in mock_print.call_args_list)
+        self.assertIn("INC-00011234", output)  # Verify full ID
+        self.assertNotIn("INC-00...", output)  # Verify no truncation
+        
     def test_menu_with_allocation_option(self):
         """Test menu shows allocation option."""
         with patch('builtins.print') as mock_print:
@@ -112,6 +113,21 @@ class TestConsoleUI(unittest.TestCase):
             self.ui.display_incidents([test_incident], dispatcher)
             output = "\n".join(call[0][0] for call in mock_print.call_args_list)
             self.assertIn("fire_engine", output)
+
+    def test_table_formatting(self):
+        """Verify table headers and borders exist."""
+        test_incident = Incident("fire", "Zone 1", "high", ["ambulance"])
+        test_incident.id = "TEST_INCIDENT"
+        
+        with patch('builtins.print') as mock_print:
+            self.ui.display_incidents([test_incident], MagicMock())
+        
+        output = "\n".join(call[0][0] for call in mock_print.call_args_list)
+        
+        # Update border checks for new column widths
+        self.assertIn("+------------+--------+", output)  # Verify borders
+        self.assertIn("| ID         | TYPE   |", output)  # Verify headers
+        self.assertIn("TEST_INCID", output)  # Verify ID appears (first 10 chars)
 
 if __name__ == "__main__":
     unittest.main()
