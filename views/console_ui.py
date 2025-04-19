@@ -6,6 +6,7 @@ Handles all user interactions and input validation.
 from typing import Optional
 from controllers.dispatcher import Dispatcher
 from models.resource import RESOURCE_TYPES
+from tabulate import tabulate
 
 class ConsoleUI:
     """Handles all console input/output operations for the emergency management system."""
@@ -16,6 +17,8 @@ class ConsoleUI:
         self.valid_priorities = ["high", "medium", "low"]  # Fixed from 'valid_priorities'
         self.min_zone = 1
         self.max_zone = 10
+        self.table_style = "grid"  # Options: grid, fancy_grid, psql, simple
+        self.table_alignment = "center"
 
     def display_menu(self) -> str:
         """
@@ -147,58 +150,65 @@ class ConsoleUI:
                 return resources
             print("Error: Must specify at least one resource.")
 
-    def display_incidents(self, incidents, dispatcher):
-        """Displays incidents with assignment info."""
-        print("\n=== Active Incidents ===")
-        print(f"{'ID':<8}{'Type':<12}{'Location':<10}{'Priority':<10}{'Status':<12}{'Resources':<20}")
-        print("-" * 72)
+    def _format_table(self, headers: list, rows: list) -> str:
+        """Standardised table formatting helper."""
+        return tabulate(rows, 
+                    headers=headers, 
+                    tablefmt="grid",  # Changed to standard grid
+                    stralign="center",
+                    numalign="center")
+
+    def display_incidents(self, incidents: list, dispatcher: Dispatcher) -> None:
+        """Displays incidents in standardized table format."""
+        headers = ["ID", "TYPE", "LOCATION", "PRIORITY", "STATUS", "RESOURCES"]
+        
+        # Define column widths (ID shows first 10 characters)
+        col_widths = [10, 8, 12, 10, 10, 20]
+        
+        rows = []
         for incident in incidents:
-            resources = [r for r in dispatcher.resources 
-                        if r.assigned_incident == incident.id]
+            resources = ", ".join(set(
+                r.resource_type for r in dispatcher.resources 
+                if r.assigned_incident == incident.id
+            )) or "None"
             
-            # More precise status detection
-            if incident.status == 'unassigned' and resources:
-                # Verify if resources are actually available
-                conflicting = any(r.assigned_incident != incident.id 
-                            for r in dispatcher.resources 
-                            if not r.is_available and r.resource_type in incident.required_resources)
-                status = "CONFLICT" if conflicting else "PARTIAL"
-            else:
-                status = incident.status
-                
-            res_str = ", ".join(r.resource_type for r in resources) if resources else "None"
-            print(f"{incident.id:<8}{incident.type:<12}{incident.location:<10}"
-                f"{incident.priority:<10}{status:<12}{res_str:<20}")
+            rows.append([
+                incident.id[:col_widths[0]].ljust(col_widths[0]),  # First 10 chars, left-aligned
+                incident.type.upper().center(col_widths[1]),
+                incident.location.center(col_widths[2]),
+                incident.priority.upper().center(col_widths[3]),
+                incident.status.upper().center(col_widths[4]),
+                resources.center(col_widths[5])
+            ])
+        
+        print("\n" + tabulate(rows, headers=headers, tablefmt="grid"))
 
     def display_resources(self, resources: list, dispatcher: Dispatcher = None) -> None:
-        """
-        Displays formatted table of available resources.
-        Args:
-            resources: List of Resource objects
-            dispatcher: Optional Dispatcher instance for location lookup
-        """
-        header = "\n=== Available Resources ==="
-        col_header = f"{'Type':<15}{'Current Location':<15}{'Status':<15}"
-        separator = "-" * 45
-        print(header)
-        print(col_header)
-        print(separator)
+        """Displays resources in standardized table format."""
+        headers = ["RESOURCE TYPE", "CURRENT LOCATION", "STATUS"]
         
+        # Define column widths
+        col_widths = [15, 20, 25]  # Wider columns for better readability
+        
+        rows = []
         for resource in resources:
-            if resource.is_available:
-                status = "Available"
-                location = resource.location
-            else:
-                location = resource.location  # Default to original location
-                if dispatcher:
-                    try:
-                        incident = dispatcher._get_incident_by_id(resource.assigned_incident)
-                        location = incident.location
-                    except Exception:
-                        pass
-                status = f"Assigned to {resource.assigned_incident[:8]}"
-                
-            print(f"{resource.resource_type:<15}{location:<15}{status:<15}")
+            location = resource.location
+            if not resource.is_available and dispatcher:
+                try:
+                    incident = dispatcher._get_incident_by_id(resource.assigned_incident)
+                    location = f"{incident.location} (assigned)"
+                except Exception:
+                    pass
+                    
+            status = "AVAILABLE" if resource.is_available else f"ASSIGNED TO {resource.assigned_incident}"
+            
+            rows.append([
+                resource.resource_type.upper().ljust(col_widths[0]),
+                location.center(col_widths[1]),
+                status.center(col_widths[2])
+            ])
+        
+        print("\n" + tabulate(rows, headers=headers, tablefmt="grid"))
         
     def _display_resource_menu(self) -> None:
         """Displays numbered resource type options."""
