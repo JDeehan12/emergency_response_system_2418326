@@ -9,7 +9,7 @@ class TestIncident(unittest.TestCase):
     """
     
     def setUp(self):
-        """Create a test incident before each test case."""
+        """Creates a test incident before each test case."""
         self.test_incident = Incident(
             incident_type="fire",
             location="Zone 1",
@@ -18,7 +18,7 @@ class TestIncident(unittest.TestCase):
         )
     
     def test_initial_attributes(self):
-        """Verify attributes are correctly initialised."""
+        """Verifies attributes are correctly initialised."""
         self.assertEqual(self.test_incident.type, "fire")
         self.assertEqual(self.test_incident.location, "Zone 1")
         self.assertEqual(self.test_incident.priority, "high")
@@ -26,17 +26,17 @@ class TestIncident(unittest.TestCase):
         self.assertEqual(self.test_incident.status, "unassigned")
     
     def test_priority_update(self):
-        """Test priority can be updated."""
+        """Tests priority can be updated."""
         self.test_incident.update_priority("medium")
         self.assertEqual(self.test_incident.priority, "medium")
     
     def test_status_update(self):
-        """Test status can be updated."""
+        """Tests status can be updated."""
         self.test_incident.set_status("assigned")
         self.assertEqual(self.test_incident.status, "assigned")
     
     def test_incident_id_generation(self):
-        """Test sequential ID generation."""
+        """Tests sequential ID generation."""
         i1 = Incident("fire", "Zone 1", "high", [])
         i2 = Incident("medical", "Zone 2", "medium", [])
         self.assertTrue(i1.id.startswith("INC-"))
