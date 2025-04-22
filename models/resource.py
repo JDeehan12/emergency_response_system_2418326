@@ -8,6 +8,7 @@ RESOURCE_TYPES = {
     2: {"id": "fire_engine", "name": "Fire Engine", "aliases": ["firetruck", "fire"]},
     3: {"id": "police_car", "name": "Police Car", "aliases": ["police", "patrol"]}
 }
+"""Dictionary mapping resource type IDs (name, aliases)."""
 
 class Resource:
     """
@@ -16,7 +17,7 @@ class Resource:
     
     def __init__(self, resource_type: str, location: str):
         """
-        Initialise a new resource.
+        Initialises a new resource.
         
         Args:
             resource_type: Must match an id from RESOURCE_TYPES
@@ -63,11 +64,10 @@ class Resource:
         self.is_available = True
 
     def __str__(self) -> str:
-        """
-        String representation for debugging/logging.
+        """Formats the resource's details for debugging or logging.
 
         Returns:
-            str: Formatted resource details.
+            str: Human-readable string with type, location, and status.
         """
         status = "Available" if self.is_available else f"Assigned to {self.assigned_incident}"
         return f"{self.resource_type:15} | {self.location:10} | {status}"

@@ -2,16 +2,16 @@ import uuid # Adds automatic UUIDs generation for incidents
 
 # models/incident.py
 class Incident:
-    """
-    Represents an emergency incident with type, location, priority, and required resources.
-    
+    """Represents an emergency incident requiring resource allocation.
+
     Attributes:
-        id (str): Unique identifier for the incident
-        type (str): The type of emergency (e.g., "fire", "accident").
-        location (str): The zone where the incident occurred (e.g., "Zone 1").
-        priority (str): Severity level ("high", "medium", "low").
-        required_resources (list): Resources needed (e.g., ["ambulance", "police"]).
-        status (str): Current assignment state (defaults to "unassigned").
+        id (str): Unique identifier formatted as 'INC-0001'.
+        type (str): Type of emergency (e.g., 'fire', 'medical').
+        location (str): Zone where incident occurred (e.g., 'Zone 1').
+        priority (str): Severity level ('high', 'medium', 'low').
+        required_resources (list): Resource types needed (e.g., ['ambulance']).
+        status (str): Tracks assignment state ('unassigned', 'assigned', 'resolved').
+        created_at (datetime): Timestamp when incident was reported.
     """
     _id_counter = 0  # Class variable for sequential IDs
 

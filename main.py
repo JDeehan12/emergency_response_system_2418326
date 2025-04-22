@@ -7,7 +7,8 @@ from controllers.main_controller import MainController
 def main():
     """
     Application entry point.
-    Initializes and runs the main controller.
+    
+    Initialises and runs the main controller.
     """
     try:
         controller = MainController()

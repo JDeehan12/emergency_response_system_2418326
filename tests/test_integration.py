@@ -11,13 +11,13 @@ class TestSystemIntegration(unittest.TestCase):
     """Tests the complete system workflow"""
     
     def setUp(self):
-        """Initialize fresh controller for each test"""
+        """Initialises fresh controller for each test"""
         self.controller = MainController()
         # Clear default resources for testing
         self.controller.dispatcher.resources = []
         
     def test_complete_incident_lifecycle(self):
-        """Test full incident lifecycle from creation to resolution"""
+        """Tests full incident lifecycle from creation to resolution"""
         print("\n=== Starting Test: Complete Incident Lifecycle ===")
         
         # 1. Add test resources
@@ -122,7 +122,7 @@ class TestSystemIntegration(unittest.TestCase):
         print("\n=== Test Completed Successfully ===")
 
     def test_priority_escalation_reallocation(self):
-        """Test if high priority incident pre-empts a medium priority one"""
+        """Tests if high priority incident pre-empts a medium priority one"""
         print("\n=== Starting Test: Priority Escalation Reallocation ===")
 
         # 1. Add test resources

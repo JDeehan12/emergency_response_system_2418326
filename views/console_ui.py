@@ -9,8 +9,13 @@ from models.resource import RESOURCE_TYPES
 from tabulate import tabulate
 
 class ConsoleUI:
-    """Handles all console input/output operations for the emergency management system."""
+    """Handles all console input/output operations for the emergency management system.
 
+    Attributes:
+        table_style (str): Format for tabulated outputs ('grid', 'simple', etc.).
+        table_alignment (str): Text alignment in tables ('left', 'center', 'right').
+    """
+        
     def __init__(self):
         """Initialises the console interface with default settings."""
         self.valid_incident_types = ["fire", "accident", "crime", "medical"]
@@ -66,12 +71,13 @@ class ConsoleUI:
             print(f"Invalid selection. Please enter 1-{len(options)}")
 
     def _select_resources(self) -> list:
-        """
-        Gets resource selection from user through console prompts.
-        Implements toggle functionality for adding/removing resources.
-        
+        """Guides user to select/deselect resources via toggle interface.
+
+        Note:
+            Selecting a resource again will remove it from the list.
+
         Returns:
-            list: Sorted list of unique resource types selected
+            list: Sorted, unique resource types selected (e.g., ['ambulance', 'fire_engine']).
         """
         selected = []
         while True:
@@ -159,7 +165,7 @@ class ConsoleUI:
                     numalign="center")
 
     def display_incidents(self, incidents: list, dispatcher: Dispatcher) -> None:
-        """Displays incidents in standardized table format."""
+        """Displays incidents in standardised table format."""
         headers = ["ID", "TYPE", "LOCATION", "PRIORITY", "STATUS", "RESOURCES"]
         
         # Define column widths (ID shows first 10 characters)
@@ -184,7 +190,7 @@ class ConsoleUI:
         print("\n" + tabulate(rows, headers=headers, tablefmt="grid"))
 
     def display_resources(self, resources: list, dispatcher: Dispatcher = None) -> None:
-        """Displays resources in standardized table format."""
+        """Displays resources in standardised table format."""
         headers = ["RESOURCE TYPE", "CURRENT LOCATION", "STATUS"]
         
         # Define column widths

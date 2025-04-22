@@ -12,7 +12,7 @@ class MainController:
     """Main application controller handling core workflow."""
     
     def __init__(self):
-        """Initialize application components."""
+        """Initialises application components."""
         self.ui = ConsoleUI()
         self.dispatcher = Dispatcher()
         self._load_default_resources()
@@ -75,7 +75,7 @@ class MainController:
             print(f"[ERROR] {str(e)}")
 
     def _handle_allocation(self):
-        """Handle manual resource allocation with proper status updates"""
+        """Handles manual resource allocation with proper status updates"""
         print("\n=== Performing Smart Allocation ===")
         print("1. Checking all high-priority incidents")
         print("2. Reallocating resources where needed")

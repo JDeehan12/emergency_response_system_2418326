@@ -74,8 +74,10 @@ class Dispatcher:
     def _assign_resources_to_incident(self, incident: Incident) -> bool:
         """
         Assigns all required resources to an incident.
-        Returns True if all resources were assigned, False otherwise.
-        If assignment fails, releases any partially assigned resources.
+
+        Returns: 
+            True if all resources were assigned, False otherwise.
+            If assignment fails, releases any partially assigned resources.
         """
         assigned_resources = []
         all_assigned = True
@@ -123,9 +125,12 @@ class Dispatcher:
         )
 
     def _reallocate_for_high_priority(self, incident: Incident) -> bool:
-        """
-        Reallocates resources from lower-priority incidents
-        to satisfy a high-priority incident.
+        """Attempts to reallocate resources from lower-priority incidents if needed.
+        Args:
+            incident: High-priority incident needing resources.
+
+        Returns:
+            bool: True if reallocation succeeded, False otherwise.
         """
         if incident.priority != "high":
             return False
@@ -188,10 +193,17 @@ class Dispatcher:
         raise IncidentNotFoundError(f"No incident found with ID: {incident_id}")
 
     def _location_distance(self, loc1: str, loc2: str) -> int:
-        """
-        Calculates simple distance between two zones.
-        Example: Zone 1 and Zone 3 -> distance 2
-        """
+        """Calculates the distance between two zones by numeric difference.
+            Note:
+                Assumes zones are numbered linearly (e.g., 'Zone 1' → 'Zone 3' = distance 2).
+
+            Args:
+                loc1: First zone (e.g., 'Zone 1').
+                loc2: Second zone.
+                
+            Returns:
+                int: Absolute difference between zone numbers, or 100 if invalid format.
+            """
         try:
             zone1 = int(loc1.split()[1])
             zone2 = int(loc2.split()[1])
@@ -202,7 +214,7 @@ class Dispatcher:
 
     def resolve_incident(self, incident_id):
         """
-        Resolve the incident and release all assigned resources.
+        Resolves the incident and releases all assigned resources.
 
         Args:
             incident_id: The ID of the incident being resolved.
@@ -227,7 +239,7 @@ class Dispatcher:
         logging.info(f"Resolved incident {incident_id}. Released resources: {[r.id for r in assigned_resources]}")
 
     def _release_resources_of_type(self, resource_type):
-        """Release all resources of specific type"""
+        """Releases all resources of specific type"""
         for r in self.resources:
             if r.resource_type == resource_type and not r.is_available:
                 r.release()
@@ -235,8 +247,10 @@ class Dispatcher:
     def _assign_resources_to_incident(self, incident: Incident) -> bool:
         """
         Assigns all required resources to an incident.
-        Returns True if all resources were assigned, False otherwise.
-        If assignment fails, releases any partially assigned resources.
+
+        Returns: 
+            True if all resources were assigned, False otherwise.
+            If assignment fails, releases any partially assigned resources.
         """
         assigned_resources = []
         
@@ -259,5 +273,3 @@ class Dispatcher:
             for resource in assigned_resources:
                 resource.release()
             return False
-
-
