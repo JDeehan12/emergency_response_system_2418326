@@ -10,7 +10,7 @@ A console-based emergency management system that intelligently allocates respons
 - Geographic proximity (zone-based)
 - Dynamic reallocation capabilities
 
-## Key Improvements in v1.3.3
+## Key Improvements in v1.4.0
 - Full incident IDs visible in all tables
 - Improved table column spacing
 - Cleaner border formatting
