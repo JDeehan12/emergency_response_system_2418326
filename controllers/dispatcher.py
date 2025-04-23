@@ -134,31 +134,47 @@ class Dispatcher:
         """
         if incident.priority != "high":
             return False
-            
-        # Try to assign normally first
+
+        # First try normal assignment with any available resources
         if self._assign_resources_to_incident(incident):
             return True
+
+        # Get currently assigned resources to this incident
+        assigned_to_incident = [r for r in self.resources 
+                            if r.assigned_incident == incident.id]
+        
+        # Calculate remaining needs
+        remaining_needs = set(incident.required_resources) - {r.resource_type for r in assigned_to_incident}
+        
+        if not remaining_needs:
+            return True
+
+        # Try to satisfy each remaining need
+        for resource_type in remaining_needs.copy():  # Create a copy for safe iteration
+            # First try to find available resources of this type
+            available = [r for r in self.resources 
+                        if r.resource_type == resource_type and r.is_available]
             
-        # If normal assignment fails, try reallocation
-        for resource_type in incident.required_resources:
+            if available:
+                available[0].assign_to_incident(incident.id)
+                remaining_needs.remove(resource_type)
+                continue
+                
+            # If no available, find reallocatable resource from lowest priority
             resource = self._find_reallocatable_resource(resource_type)
-            if resource:
-                # Get the incident this resource is currently assigned to
-                current_incident = self._get_incident_by_id(resource.assigned_incident)
+            if not resource:
+                return False
                 
-                # Release from current assignment
-                resource.release()
-                current_incident.status = "unassigned"
-                
-                # Try assigning again
-                if self._assign_resources_to_incident(incident):
-                    return True
-                else:
-                    # If failed, try to reassign back to original incident
-                    if self._assign_resources_to_incident(current_incident):
-                        return False
-                        
-        return False
+            # Release from current assignment
+            current_incident = self._get_incident_by_id(resource.assigned_incident)
+            resource.release()
+            current_incident.status = "unassigned"
+            
+            # Assign to new incident
+            resource.assign_to_incident(incident.id)
+            remaining_needs.remove(resource_type)
+
+        return True
 
     def _find_reallocatable_resource(self, resource_type: str) -> Optional[Resource]:
         """

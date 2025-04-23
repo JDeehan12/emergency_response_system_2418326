@@ -162,6 +162,53 @@ class TestDispatcher(unittest.TestCase):
         self.dispatcher.add_resource(Resource("ambulance", "Zone 1"))
         self.assertEqual(len([r for r in self.dispatcher.resources 
                             if r.resource_type == "ambulance" and r.location == "Zone 1"]), 2)
+    
+    def test_high_priority_with_available_resources(self):
+        """Verify high-priority uses available resources before reallocating."""
+        # Clear defaults and setup specific resources
+        self.dispatcher.resources = [
+            Resource("ambulance", "Zone 1"),  # Will be available
+            Resource("fire_engine", "Zone 1"),  # Will be assigned to low
+            Resource("police_car", "Zone 1"),  # Will be assigned to medium
+            Resource("ambulance", "Zone 2"),  # Available
+            Resource("fire_engine", "Zone 2"),  # Available
+            Resource("police_car", "Zone 2")  # Available
+        ]
+        
+        # Create low-priority incident
+        low_inc = Incident("fire", "Zone 1", "low", ["fire_engine"])
+        self.dispatcher.add_incident(low_inc)
+        
+        # Create medium-priority incident
+        med_inc = Incident("accident", "Zone 1", "medium", ["police_car"])
+        self.dispatcher.add_incident(med_inc)
+        
+        # Create high-priority incident
+        high_inc = Incident("crime", "Zone 1", "high", 
+                        ["ambulance", "fire_engine", "police_car"])
+        self.dispatcher.add_incident(high_inc)
+        
+        # Verify assignments
+        self.assertEqual(high_inc.status, "assigned")
+        self.assertEqual(med_inc.status, "assigned")  # Should keep police_car
+        self.assertEqual(low_inc.status, "assigned")  # Should keep fire_engine
+        
+        # Verify resource assignments
+        assigned_ambulances = [r for r in self.dispatcher.resources 
+                            if r.resource_type == "ambulance" and not r.is_available]
+        self.assertEqual(len(assigned_ambulances), 1)  # Only one should be assigned
+        
+        # Verify high-priority got available resources first
+        high_resources = [r.resource_type for r in self.dispatcher.resources 
+                        if r.assigned_incident == high_inc.id]
+        self.assertIn("ambulance", high_resources)
+        self.assertIn("fire_engine", high_resources)
+        self.assertIn("police_car", high_resources)
+        
+        # Verify medium-priority kept its police_car
+        med_resources = [r.resource_type for r in self.dispatcher.resources 
+                        if r.assigned_incident == med_inc.id]
+        self.assertEqual(med_resources, ["police_car"])
 
 if __name__ == "__main__":
     unittest.main()
