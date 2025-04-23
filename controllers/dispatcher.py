@@ -9,7 +9,13 @@ from typing import List, Dict, Optional
 from models.incident import Incident
 from models.resource import Resource
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(message)s',  # Remove the root: prefix
+    handlers=[
+        logging.StreamHandler()
+    ]
+)
 
 class IncidentNotFoundError(Exception):
     """Custom exception for when an incident cannot be found by ID."""
@@ -64,12 +70,12 @@ class Dispatcher:
                 success = self._assign_resources_to_incident(incident)
                 if success:
                     incident.status = 'assigned'
-                    logging.info(f"Resources allocated to incident {incident.id}")
+                    logging.info(f"ASSIGNED: Resources successfully allocated to incident {incident.id}")
                 elif incident.priority == 'high':
                     reallocated = self._reallocate_for_high_priority(incident)
                     if reallocated:
                         incident.status = 'assigned'
-                        logging.info(f"Resources reallocated to high-priority incident {incident.id}")
+                        logging.info(f"REALLOCATED: Resources reallocated to high-priority incident {incident.id}")
 
     def _assign_resources_to_incident(self, incident: Incident) -> bool:
         """
