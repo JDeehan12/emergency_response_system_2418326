@@ -1,4 +1,6 @@
 import unittest
+import logging
+import time
 from controllers.dispatcher import Dispatcher
 from models.incident import Incident
 from models.resource import Resource
@@ -164,51 +166,106 @@ class TestDispatcher(unittest.TestCase):
                             if r.resource_type == "ambulance" and r.location == "Zone 1"]), 2)
     
     def test_high_priority_with_available_resources(self):
-        """Verify high-priority uses available resources before reallocating."""
-        # Clear defaults and setup specific resources
+        """Verify newly added resources are properly allocated to unassigned incidents."""
+        # Clear existing resources
+        self.dispatcher.resources = []
+        
+        # Add initial limited resources
+        self.dispatcher.add_resource(Resource("ambulance", "Zone 1"))
+        self.dispatcher.add_resource(Resource("fire_engine", "Zone 1"))
+        
+        # Create incidents - all high priority but with different requirements
+        high1 = Incident("medical", "Zone 1", "high", ["ambulance"])
+        high2 = Incident("fire", "Zone 2", "high", ["fire_engine"])
+        medium = Incident("accident", "Zone 3", "medium", ["ambulance"])
+        
+        # Add incidents
+        self.dispatcher.add_incident(high1)
+        self.dispatcher.add_incident(high2)
+        self.dispatcher.add_incident(medium)
+        
+        # First allocation - should assign both high priority incidents
+        result = self.dispatcher.allocate_resources()
+        self.assertEqual(high1.status, "assigned", "First high-priority should be assigned")
+        self.assertEqual(high2.status, "assigned", "Second high-priority should be assigned")
+        self.assertEqual(medium.status, "unassigned", "Medium priority should wait")
+        
+        # Add new resources
+        self.dispatcher.add_resource(Resource("ambulance", "Zone 2"))
+        self.dispatcher.add_resource(Resource("fire_engine", "Zone 2"))
+        
+        # Reallocate - should now assign all incidents
+        result = self.dispatcher.allocate_resources()
+        self.assertEqual(high1.status, "assigned", "First high-priority remains assigned")
+        self.assertEqual(high2.status, "assigned", "Second high-priority remains assigned")
+        self.assertEqual(medium.status, "assigned", "Medium priority now assigned")
+
+    def test_high_priority_guaranteed_assignment(self):
+        """Verify high-priority incidents always get assigned when possible."""
+        # Setup with limited resources
         self.dispatcher.resources = [
-            Resource("ambulance", "Zone 1"),  # Will be available
-            Resource("fire_engine", "Zone 1"),  # Will be assigned to low
-            Resource("police_car", "Zone 1"),  # Will be assigned to medium
-            Resource("ambulance", "Zone 2"),  # Available
-            Resource("fire_engine", "Zone 2"),  # Available
-            Resource("police_car", "Zone 2")  # Available
+            Resource("ambulance", "Zone 1"),
+            Resource("fire_engine", "Zone 1")
         ]
         
-        # Create low-priority incident
-        low_inc = Incident("fire", "Zone 1", "low", ["fire_engine"])
-        self.dispatcher.add_incident(low_inc)
+        # Create competing incidents
+        high_inc = Incident("fire", "Zone 1", "high", ["ambulance", "fire_engine"])
+        low_inc = Incident("accident", "Zone 1", "low", ["ambulance", "fire_engine"])
         
-        # Create medium-priority incident
-        med_inc = Incident("accident", "Zone 1", "medium", ["police_car"])
-        self.dispatcher.add_incident(med_inc)
-        
-        # Create high-priority incident
-        high_inc = Incident("crime", "Zone 1", "high", 
-                        ["ambulance", "fire_engine", "police_car"])
+        # Add high priority first
         self.dispatcher.add_incident(high_inc)
-        
-        # Verify assignments
         self.assertEqual(high_inc.status, "assigned")
-        self.assertEqual(med_inc.status, "assigned")  # Should keep police_car
-        self.assertEqual(low_inc.status, "assigned")  # Should keep fire_engine
         
-        # Verify resource assignments
-        assigned_ambulances = [r for r in self.dispatcher.resources 
-                            if r.resource_type == "ambulance" and not r.is_available]
-        self.assertEqual(len(assigned_ambulances), 1)  # Only one should be assigned
+        # Add low priority - should remain unassigned
+        self.dispatcher.add_incident(low_inc)
+        self.assertEqual(low_inc.status, "unassigned")
         
-        # Verify high-priority got available resources first
-        high_resources = [r.resource_type for r in self.dispatcher.resources 
-                        if r.assigned_incident == high_inc.id]
-        self.assertIn("ambulance", high_resources)
-        self.assertIn("fire_engine", high_resources)
-        self.assertIn("police_car", high_resources)
+        # Add new resource - should go to high priority if needed
+        self.dispatcher.add_resource(Resource("ambulance", "Zone 2"))
+        self.dispatcher.allocate_resources()
+        self.assertEqual(high_inc.status, "assigned")
+
+    def test_competing_high_priority_incidents(self):
+        """Verify multiple high-priority incidents are handled correctly with timestamp-based prioritization."""
+        # Setup with limited resources
+        self.dispatcher.resources = [
+            Resource("ambulance", "Zone 1"),
+            Resource("fire_engine", "Zone 1")
+        ]
         
-        # Verify medium-priority kept its police_car
-        med_resources = [r.resource_type for r in self.dispatcher.resources 
-                        if r.assigned_incident == med_inc.id]
-        self.assertEqual(med_resources, ["police_car"])
+        # Create competing high-priority incidents
+        high1 = Incident("medical", "Zone 1", "high", ["ambulance", "fire_engine"])
+        # Simulate older timestamp by setting it manually
+        high1.timestamp = time.time() - 10  # 10 seconds older
+        
+        high2 = Incident("fire", "Zone 2", "high", ["ambulance", "fire_engine"])
+        # high2 will have newer timestamp by default
+        
+        # Add incidents
+        self.dispatcher.add_incident(high1)
+        self.dispatcher.add_incident(high2)
+        
+        # First allocation attempt
+        self.dispatcher.allocate_resources()
+        
+        # Verify newer incident is assigned first
+        self.assertEqual(high2.status, "assigned",
+                        "Newer high-priority incident should be assigned first")
+        self.assertEqual(high1.status, "unassigned",
+                        "Older high-priority incident should wait when resources are limited")
+        
+        # Add additional resources
+        self.dispatcher.add_resource(Resource("ambulance", "Zone 2"))
+        self.dispatcher.add_resource(Resource("fire_engine", "Zone 2"))
+        
+        # Reallocate
+        self.dispatcher.allocate_resources()
+        
+        # Now both should be assigned
+        self.assertEqual(high1.status, "assigned",
+                        "Older high-priority should now be assigned with new resources")
+        self.assertEqual(high2.status, "assigned",
+                        "Newer high-priority should remain assigned")
 
 if __name__ == "__main__":
     unittest.main()

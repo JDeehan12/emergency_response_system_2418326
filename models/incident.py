@@ -1,6 +1,6 @@
 import uuid # Adds automatic UUIDs generation for incidents
+import time
 
-# models/incident.py
 class Incident:
     """Represents an emergency incident requiring resource allocation.
 
@@ -11,18 +11,19 @@ class Incident:
         priority (str): Severity level ('high', 'medium', 'low').
         required_resources (list): Resource types needed (e.g., ['ambulance']).
         status (str): Tracks assignment state ('unassigned', 'assigned', 'resolved').
-        created_at (datetime): Timestamp when incident was reported.
+        timestamp (time): Timestamp when incident was reported.
     """
     _id_counter = 0  # Class variable for sequential IDs
 
     def __init__(self, incident_type: str, location: str, priority: str, required_resources: list):
         Incident._id_counter += 1
-        self.id = f"INC-{Incident._id_counter:04d}"  # Format as INC-0001
+        self.id = f"INC-{Incident._id_counter:04d}"
         self.type = incident_type
         self.location = location
         self.priority = priority
         self.required_resources = required_resources
-        self.status = "unassigned"  # Default status
+        self.status = "unassigned"
+        self.timestamp = time.time()   # Default status
 
     def update_priority(self, new_priority: str):
         """

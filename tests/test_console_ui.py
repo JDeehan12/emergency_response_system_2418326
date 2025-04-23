@@ -77,7 +77,7 @@ class TestConsoleUI(unittest.TestCase):
         
         output = "\n".join(call[0][0] for call in mock_print.call_args_list)
         self.assertIn("INC-00011234", output)  # Verify full ID
-        self.assertNotIn("INC-00...", output)  # Verify no truncation
+        self.assertNotIn("INC-00...", output)
         
     def test_menu_with_allocation_option(self):
         """Test menu shows allocation option."""
