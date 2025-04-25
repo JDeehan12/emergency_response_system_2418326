@@ -1,0 +1,32 @@
+@startuml emergency_response_system
+
+folder "emergency_response_system" {
+    
+    folder "models" {
+        file "incident.py"       : Incident class with priority and timestamp tracking
+        file "resource.py"       : Resource class with availability management
+        file "__init__.py"
+    }
+
+    folder "views" {
+        file "console_ui.py"     : Menu-driven console interface
+        file "__init__.py"
+    }
+
+    folder "controllers" {
+        file "dispatcher.py"     : Enhanced smart allocation engine
+        file "main_controller.py"
+        file "__init__.py"
+    }
+
+    folder "tests" {
+        folder "unit"            : Component tests
+        folder "integration"     : System workflow tests
+        file "__init__.py"
+    }
+
+    file "main.py"              : Application entry
+    file "README.md"
+}
+
+@enduml

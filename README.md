@@ -1,7 +1,7 @@
 # Emergency Response System  
-**SDLC Method**: Agile (iterative development in sprints)  
+**SDLC Method**: Agile
 **Version**: Version 1.5.0
-**Last Updated**: 2025-04-23
+**Last Updated**: 2025-04-24
 
 ## Overview  
 A console-based emergency management system that intelligently allocates response resources based on:
