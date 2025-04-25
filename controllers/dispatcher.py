@@ -72,15 +72,11 @@ class Dispatcher:
         )
 
         # Phase 1: Assign all high-priority incidents with available resources
-        high_priority_incidents = [i for i in sorted_incidents if i.priority == 'high']
-        for incident in high_priority_incidents:
-            if not self._assign_resources_to_incident(incident):
-                # If normal assignment fails, try force assignment
-                self._force_assign_high_priority(incident)
-
-        # Phase 2: Assign remaining incidents
         for incident in sorted_incidents:
-            if incident.status != 'assigned':
+            if incident.priority == 'high':
+                if not self._assign_resources_to_incident(incident):
+                    self._force_assign_high_priority(incident)
+            else:
                 self._assign_resources_to_incident(incident)
 
         # Prepare results
@@ -92,11 +88,13 @@ class Dispatcher:
             'assigned': assigned,
             'unassigned': unassigned
         }
-
+    
     def _force_assign_high_priority(self, incident: Incident) -> bool:
         """
-        Final version with timestamp-based reallocation.
-        Only reallocates from older incidents of same priority or lower priorities.
+        Forcefully assigns resources to high-priority incidents by reallocating from:
+        - Any lower priority incidents
+        - Older high-priority incidents
+        Returns True if all resources were assigned, False otherwise
         """
         if incident.priority != 'high':
             return False
@@ -113,32 +111,45 @@ class Dispatcher:
                     assigned_resources.append(resource)
                     continue
                     
-                # Then find any assignable resource (including from other high-priority incidents)
-                for candidate in self.resources:
-                    if (candidate.resource_type == resource_type 
-                        and not candidate.is_available):
-                        
-                        # Release from current assignment
-                        current_incident = self._get_incident_by_id(candidate.assigned_incident)
-                        candidate.release()
-                        current_incident.status = 'unassigned'
-                        
-                        # Assign to new incident
-                        candidate.assign_to_incident(incident.id)
-                        assigned_resources.append(candidate)
-                        break
+                # Then try to reallocate from other incidents
+                candidate = self._find_reallocatable_resource(resource_type, incident.timestamp)
+                if candidate:
+                    # Release from current assignment
+                    current_incident = self._get_incident_by_id(candidate.assigned_incident)
+                    candidate.release()
+                    current_incident.status = 'unassigned'
+                    
+                    # Assign to new incident
+                    candidate.assign_to_incident(incident.id)
+                    assigned_resources.append(candidate)
                 else:
-                    raise ValueError(f"No {resource_type} available")
+                    # Last resort - take from any incident regardless of timestamp
+                    for resource in self.resources:
+                        if (resource.resource_type == resource_type and 
+                            not resource.is_available and 
+                            resource.assigned_incident):
+                            current_incident = self._get_incident_by_id(resource.assigned_incident)
+                            if current_incident.priority == 'high':
+                                # Only take from older high-priority incidents
+                                if current_incident.timestamp < incident.timestamp:
+                                    resource.release()
+                                    current_incident.status = 'unassigned'
+                                    resource.assign_to_incident(incident.id)
+                                    assigned_resources.append(resource)
+                                    break
+                    else:
+                        raise ValueError(f"No {resource_type} could be reallocated")
 
             incident.status = 'assigned'
             return True
-            
-        except Exception:
+                
+        except Exception as e:
+            logging.error(f"Force assignment failed for incident {incident.id}: {str(e)}")
             # Rollback any partial assignments
             for r in assigned_resources:
                 r.release()
             return False
-
+    
     def _assign_resources_to_incident(self, incident: Incident) -> bool:
         """
         Assigns required resources to an incident using optimal available resources.
@@ -220,10 +231,10 @@ class Dispatcher:
     def _reallocate_for_high_priority(self, incident: Incident) -> bool:
         """Uses force assignment for high-priority incidents."""
         return self._force_assign_high_priority(incident)
-
-    def _find_reallocatable_resource(self, resource_type: str) -> Optional[Resource]:
+    
+    def _find_reallocatable_resource(self, resource_type: str, requesting_timestamp: float) -> Optional[Resource]:
         """
-        Finds a resource that can be reallocated, prioritizing:
+        Finds a resource that can be reallocated, prioritising:
         1. Lowest priority incidents
         2. Older incidents of same priority
         """
@@ -233,7 +244,10 @@ class Dispatcher:
                     and not resource.is_available
                     and resource.assigned_incident):
                 incident = self._get_incident_by_id(resource.assigned_incident)
-                candidates.append((resource, incident))
+                # Consider all incidents except newer high-priority ones
+                if (incident.priority != 'high' or 
+                    (incident.priority == 'high' and incident.timestamp < requesting_timestamp)):
+                    candidates.append((resource, incident))
 
         if not candidates:
             return None

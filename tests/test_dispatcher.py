@@ -11,11 +11,18 @@ class TestDispatcher(unittest.TestCase):
 
     def setUp(self):
         self.dispatcher = Dispatcher()
+        from models.incident import Incident
+        Incident._id_counter = 0
         self.ambulance = Resource("ambulance", "Zone 1")
         self.fire_engine = Resource("fire_engine", "Zone 2")
         self.police_car = Resource("police_car", "Zone 1")
         self.dispatcher.add_resource(self.ambulance)
         self.dispatcher.add_resource(self.fire_engine)
+    
+    def tearDown(self):
+        # Clean up any resources
+        self.dispatcher.incidents = []
+        self.dispatcher.resources = []
 
     def test_proximity_matching(self):
         """Resources are allocated from same zone when possible."""
@@ -116,20 +123,21 @@ class TestDispatcher(unittest.TestCase):
         log_entries = [v for k,v in self.dispatcher.allocation_log.items() 
                     if k.startswith(incident.id)]
         self.assertEqual(len(log_entries), 3)
-        def test_assignment_rollback_on_failure(self):
-            self.dispatcher.resources = [
-                Resource("ambulance", "Zone 1"),
-                Resource("fire_engine", "Zone 1")  # Deliberately missing police_car
-            ]
-            
-            incident = Incident("major", "Zone 1", "high", 
-                            ["ambulance", "fire_engine", "police_car"])
-            self.dispatcher.add_incident(incident)
-            
-            # Verify rollback occurred
-            self.assertEqual(incident.status, "unassigned")
-            assigned = [r for r in self.dispatcher.resources if not r.is_available]
-            self.assertEqual(len(assigned), 0)
+        
+    def test_assignment_rollback_on_failure(self):
+        self.dispatcher.resources = [
+            Resource("ambulance", "Zone 1"),
+            Resource("fire_engine", "Zone 1")  # Deliberately missing police_car
+        ]
+        
+        incident = Incident("major", "Zone 1", "high", 
+                        ["ambulance", "fire_engine", "police_car"])
+        self.dispatcher.add_incident(incident)
+        
+        # Verify rollback occurred
+        self.assertEqual(incident.status, "unassigned")
+        assigned = [r for r in self.dispatcher.resources if not r.is_available]
+        self.assertEqual(len(assigned), 0)
 
     def test_complex_allocation_scenario(self):
         """Test multiple incidents with shared resource requirements"""
@@ -241,9 +249,9 @@ class TestDispatcher(unittest.TestCase):
         high2 = Incident("fire", "Zone 2", "high", ["ambulance", "fire_engine"])
         # high2 will have newer timestamp by default
         
-        # Add incidents
-        self.dispatcher.add_incident(high1)
+        # Add incidents in reverse order to ensure timestamp is what matters
         self.dispatcher.add_incident(high2)
+        self.dispatcher.add_incident(high1)
         
         # First allocation attempt
         self.dispatcher.allocate_resources()

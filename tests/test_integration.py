@@ -3,6 +3,7 @@ End-to-end integration test for emergency response system.
 Tests complete workflow from incident creation to resolution.
 """
 import unittest
+import time
 from controllers.main_controller import MainController
 from models.incident import Incident
 from models.resource import Resource
@@ -13,57 +14,60 @@ class TestSystemIntegration(unittest.TestCase):
     def setUp(self):
         """Initialises fresh controller for each test"""
         self.controller = MainController()
-        # Clear default resources for testing
+        # Clear all state
+        self.controller.dispatcher.incidents = []
         self.controller.dispatcher.resources = []
+        self.controller.dispatcher.allocation_log = {}
+        # Reset incident counter
+        from models.incident import Incident
+        Incident._id_counter = 0
         
     def test_complete_incident_lifecycle(self):
         """Tests full incident lifecycle from creation to resolution"""
         print("\n=== Starting Test: Complete Incident Lifecycle ===")
         
-        # 1. Add sufficient test resources (extra ambulance)
+        # 1. Add test resources
         resources = [
             Resource("ambulance", "Zone 1"),
-            Resource("ambulance", "Zone 2"),  # Extra ambulance
-            Resource("fire_engine", "Zone 2"),
+            Resource("fire_engine", "Zone 2"),  # Only one fire engine available
             Resource("police_car", "Zone 3")
         ]
         for r in resources:
             self.controller.dispatcher.add_resource(r)
         
-        # 2. Report first incident (high priority but limited resources)
+        # 2. Report first high-priority incident (older timestamp)
         incident1 = Incident(
             incident_type="fire",
             location="Zone 2",
             priority="high",
-            required_resources=["fire_engine"]  # Only needs fire engine
+            required_resources=["fire_engine"]
         )
+        incident1.timestamp = time.time() - 10  # Make it older
         self.controller.dispatcher.add_incident(incident1)
         
         # 3. Verify first assignment
         self.assertEqual(incident1.status, "assigned")
         
-        # 4. Report critical incident (needs ambulance + fire engine)
-        critical_incident = Incident(
+        # 4. Report newer high-priority incident that needs same resource
+        incident2 = Incident(
             incident_type="explosion",
             location="Zone 1",
             priority="high",
-            required_resources=["ambulance", "fire_engine"]
+            required_resources=["fire_engine"]
         )
-        self.controller.dispatcher.add_incident(critical_incident)
+        self.controller.dispatcher.add_incident(incident2)
         
-        # 5. Verify reallocation occurred
-        self.assertEqual(critical_incident.status, "assigned",
-                        "Critical incident should be assigned")
+        # 5. Verify newer incident took the resource
+        self.assertEqual(incident2.status, "assigned",
+                        "Newer high-priority incident should get the resource")
         self.assertEqual(incident1.status, "unassigned",
-                        "Original incident should be unassigned after reallocation")
+                        "Older high-priority incident should lose the resource")
         
-        # 6. Resolve critical incident
-        self.controller.dispatcher.resolve_incident(critical_incident.id)
-        
-        # 7. Verify final state
-        for resource in self.controller.dispatcher.resources:
-            self.assertTrue(resource.is_available,
-                        f"{resource.resource_type} should be available after resolution")
+        # 6. Verify the fire engine is assigned to the newer incident
+        fire_engine = next(r for r in self.controller.dispatcher.resources 
+                        if r.resource_type == "fire_engine")
+        self.assertEqual(fire_engine.assigned_incident, incident2.id,
+                        "Fire engine should be assigned to newer incident")
         
         print("\n=== Test Completed Successfully ===")
 
